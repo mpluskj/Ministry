@@ -50,7 +50,7 @@ export default function MonthlyReportDetail({
       
       try {
         const response = await fetch(
-          `http://localhost:4000/api/monthly-detail?month=${encodeURIComponent(month)}&email=${encodeURIComponent(managerEmail)}`
+          `${import.meta.env.VITE_API_URL}/api/monthly-detail?month=${encodeURIComponent(month)}&email=${encodeURIComponent(managerEmail)}`
         );
         
         if (!response.ok) {

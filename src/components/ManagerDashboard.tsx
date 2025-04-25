@@ -59,7 +59,7 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
       setLoading(true);
       
       // 관리자 유형 확인
-      const typeResponse = await fetch('http://localhost:4000/api/manager-type', {
+      const typeResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/manager-type`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -72,11 +72,11 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
       const monthlyData = await Promise.all(
         MONTHS.map(async (month) => {
           // 마감 상태 조회
-          const statusResp = await fetch(`http://localhost:4000/api/status?month=${encodeURIComponent(month)}`);
+          const statusResp = await fetch(`${import.meta.env.VITE_API_URL}/api/status?month=${encodeURIComponent(month)}`);
           const { status } = await statusResp.json();
 
           // 통계 데이터 조회
-          const statsResp = await fetch(`http://localhost:4000/api/monthly-stats?month=${encodeURIComponent(month)}&email=${encodeURIComponent(email)}`);
+          const statsResp = await fetch(`${import.meta.env.VITE_API_URL}/api/monthly-stats?month=${encodeURIComponent(month)}&email=${encodeURIComponent(email)}`);
           const stats = await statsResp.json();
 
           return { month, status, stats };
@@ -99,7 +99,7 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
     }
 
     try {
-      await fetch('http://localhost:4000/api/toggle-status', {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/toggle-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ month, currentStatus })
@@ -114,7 +114,7 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
     if (!confirmMonth) return;
     
     try {
-      await fetch('http://localhost:4000/api/toggle-status', {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/toggle-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ month: confirmMonth, currentStatus: 'COMPLETED' })
