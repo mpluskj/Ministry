@@ -6,6 +6,12 @@ export default defineConfig({
   base: '/Ministry/',
   build: {
     outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name][extname]'
+      }
+    }
   },
   server: {
     port: 5175,

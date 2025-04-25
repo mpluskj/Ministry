@@ -103,10 +103,16 @@ export const initGoogleAPI = async () => {
   });
 
   await new Promise<void>((resolve) => {
-    gapi.load('client', resolve);
+    window.gapi.load('client', {
+      callback: resolve,
+      onerror: () => {
+        console.error('Failed to load GAPI client');
+        resolve();
+      }
+    });
   });
 
-  await gapi.client.init({
+  await window.gapi.client.init({
     apiKey: API_KEY,
     discoveryDocs: [DISCOVERY_DOC],
   });
@@ -117,6 +123,8 @@ export const initGoogleAPI = async () => {
   await new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
     script.onload = () => resolve();
     script.onerror = reject;
     document.body.appendChild(script);
@@ -126,6 +134,8 @@ export const initGoogleAPI = async () => {
     client_id: CLIENT_ID,
     scope: SCOPES.join(' '),
     callback: null,
+    prompt: 'consent',
+    enable_serial_consent: true
   });
 
   gisInited = true;
