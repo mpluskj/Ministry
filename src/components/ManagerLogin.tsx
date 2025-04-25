@@ -1,73 +1,68 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Paper } from '@mui/material';
-import { checkManagerAccess, signInIfNeeded } from '../services/googleSheets';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Box, Button, Typography } from '@mui/material';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
+
+interface DecodedToken {
+  email: string;
+}
 
 interface ManagerLoginProps {
   onLogin: (email: string) => void;
 }
 
 export default function ManagerLogin({ onLogin }: ManagerLoginProps) {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
+  const handleSuccess = (response: CredentialResponse) => {
     try {
-      await signInIfNeeded(); // 관리자 로그인 시 구글 인증
-      const hasAccess = await checkManagerAccess(email);
-      if (hasAccess) {
-        onLogin(email);
-      } else {
-        setError('관리자 권한이 없습니다.');
+      if (!response.credential) {
+        throw new Error('로그인 응답에 인증 정보가 없습니다.');
       }
-    } catch (err) {
+
+      const decoded = jwtDecode<DecodedToken>(response.credential);
+      onLogin(decoded.email);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Login error:', error);
       setError('로그인 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
     <Box sx={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      minHeight: '100vh' 
+      maxWidth: 400, 
+      mx: 'auto', 
+      mt: 4, 
+      p: 3, 
+      textAlign: 'center' 
     }}>
-      <Paper sx={{ p: 4, maxWidth: 400, width: '100%' }}>
-        <Typography variant="h5" component="h1" gutterBottom textAlign="center">
-          관리자 로그인
+      <Typography variant="h5" sx={{ mb: 3 }}>
+        관리자 로그인
+      </Typography>
+
+      <Box sx={{ mb: 2 }}>
+        <GoogleLogin
+          onSuccess={handleSuccess}
+          onError={() => setError('로그인 중 오류가 발생했습니다.')}
+        />
+      </Box>
+
+      {error && (
+        <Typography color="error">
+          {error}
         </Typography>
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label="구글 이메일"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            fullWidth
-            required
-            margin="normal"
-          />
-          {error && (
-            <Typography color="error" sx={{ mt: 1 }}>
-              {error}
-            </Typography>
-          )}
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            sx={{ mt: 3 }}
-            disabled={isLoading}
-          >
-            {isLoading ? '확인 중...' : '로그인'}
-          </Button>
-        </form>
-      </Paper>
+      )}
+
+      <Button 
+        variant="text" 
+        onClick={() => navigate('/')}
+        sx={{ mt: 2 }}
+      >
+        봉사 보고 폼으로 돌아가기
+      </Button>
     </Box>
   );
 }

@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { submitReport } from '../services/googleSheets';
+import { submitMinistryReport, checkMonthStatus } from '../services/clientService';
 
 const REMARK_OPTIONS = [
   'LDC',
@@ -52,8 +52,7 @@ export default function MinistryReportForm() {
       return;
     }
     // 월이 선택되면 마감 여부 확인
-    fetch(`http://localhost:4000/api/is-closed?month=${encodeURIComponent(month)}`)
-      .then(res => res.json())
+    checkMonthStatus(month)
       .then(data => setIsClosed(data.isClosed))
       .catch(() => setIsClosed(null));
   }, [month]);
@@ -82,8 +81,7 @@ export default function MinistryReportForm() {
     }
 
     try {
-      // 데이터 제출
-      await submitReport({
+      await submitMinistryReport({
         name,
         month,
         participated,
@@ -102,8 +100,8 @@ export default function MinistryReportForm() {
 
       alert('봉사 보고가 성공적으로 제출되었습니다.');
     } catch (error) {
-      console.error('제출 오류:', JSON.stringify(error, null, 2));
-      setError(error instanceof Error ? error.message : JSON.stringify(error));
+      console.error('제출 오류:', error);
+      setError(error instanceof Error ? error.message : '보고 제출 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -324,7 +322,7 @@ export default function MinistryReportForm() {
                     }
                   }}
                   fullWidth
-                  disableUnderline
+                  InputProps={{ disableUnderline: true }}
                 />
               </FormControl>
               <Typography>시간</Typography>
