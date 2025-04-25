@@ -52,6 +52,8 @@ declare global {
             client_id: string;
             scope: string;
             callback: ((resp: any) => void) | null;
+            prompt?: 'none' | 'consent' | 'select_account';
+            enable_serial_consent?: boolean;
           }) => TokenClient;
         };
       };
