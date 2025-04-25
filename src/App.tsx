@@ -58,7 +58,7 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Ministry">
       <div style={{ minHeight: '100vh', background: '#f5f5f5', padding: '40px 0' }}>
         <Routes>
           <Route path="/" element={<MinistryReportForm />} />
