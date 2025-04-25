@@ -344,3 +344,254 @@ export const updateMonthlyClose = async (month: string, closed: boolean) => {
     throw error;
   }
 };
+
+// Google API 클라이언트 설정
+const CLIENT_ID = '497507205467-hic2647a8dbe9im2n68ljcftc5pf3pkv.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyBCMOdCd9HJ9_50WeY4CnGKV6KNyOy568w';
+const SPREADSHEET_ID = '134CgG8LsC3ifDRZ2VnqhoyP1xWvuGbaDCS9jj9H139Y';
+const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+const SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive.file'
+];
+
+let tokenClient: google.accounts.oauth2.TokenClient | null = null;
+let gapiInited = false;
+let gisInited = false;
+
+export const initGoogleAPI = async () => {
+  if (gapiInited && gisInited) return true;
+
+  // gapi 로드
+  await new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = () => resolve();
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+
+  await new Promise<void>((resolve) => {
+    gapi.load('client', resolve);
+  });
+
+  await gapi.client.init({
+    apiKey: API_KEY,
+    discoveryDocs: [DISCOVERY_DOC],
+  });
+
+  gapiInited = true;
+
+  // gis 로드
+  await new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = () => resolve();
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES.join(' '),
+    callback: '', // defined later
+  });
+
+  gisInited = true;
+
+  return true;
+};
+
+const getAccessToken = async (): Promise<void> => {
+  if (!tokenClient) throw new Error('Token client not initialized');
+  
+  return new Promise((resolve, reject) => {
+    try {
+      tokenClient!.callback = (resp) => {
+        if (resp.error) reject(resp);
+        resolve();
+      };
+      if (gapi.client.getToken() === null) {
+        tokenClient!.requestAccessToken();
+      } else {
+        resolve();
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
+
+interface MinistryReport {
+  name: string;
+  month: string;
+  participated: boolean;
+  bibleStudies: string;
+  hours: string;
+  remarks?: Array<{
+    type: string;
+    hours: string;
+    etc?: string;
+  }>;
+}
+
+export const submitReport = async (data: MinistryReport) => {
+  await getAccessToken();
+
+  // 전체명단에서 이름과 일치하는 행의 직책(B), RP(C), 집단(F) 추출
+  const listResp = await gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: '전체명단!A:F',
+  });
+
+  const userRow = listResp.result.values?.find(row => row[0] === data.name);
+  const position = userRow?.[1] || '';
+  const rp = userRow?.[2] || '';
+  const group = userRow?.[5] || '';
+
+  // remarks를 줄바꿈으로 구분하여 한 셀에 입력
+  const remarksCell = (data.remarks || [])
+    .map(r => `${r.type}${r.hours ? ': ' + r.hours + '시간' : ''}${r.etc ? ' - ' + r.etc : ''}`)
+    .filter(Boolean)
+    .join('\n');
+
+  const values = [
+    [
+      data.name,
+      data.month,
+      data.participated ? 'Y' : 'N',
+      data.bibleStudies,
+      data.hours,
+      remarksCell,
+      '',
+      '',
+      rp,
+      '',
+      position,
+      group
+    ],
+  ];
+
+  await gapi.client.sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${data.month}!A9`,
+    valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: { values },
+  });
+
+  return { success: true };
+};
+
+export const checkManagerAccess = async (email: string) => {
+  await getAccessToken();
+
+  const response = await gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: '집단명!A:C',
+  });
+
+  const rows = response.result.values || [];
+  const isSuperManager = rows.slice(0, 2).some(row => row[2] === email);
+  const isGroupManager = rows.slice(4).some(row => row[2] === email);
+
+  return isSuperManager || isGroupManager;
+};
+
+export const getMonthlyStats = async (month: string, email: string) => {
+  await getAccessToken();
+
+  // 관리자 유형 및 집단 확인
+  const managerResp = await gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: '집단명!A:C',
+  });
+
+  const managerRows = managerResp.result.values || [];
+  const isSuperManager = managerRows.slice(0, 2).some(row => row[2] === email);
+  const groupManagerRow = managerRows.slice(4).find(row => row[2] === email);
+  const managerGroup = groupManagerRow ? groupManagerRow[0] : null;
+
+  // 해당 월의 데이터 조회
+  const response = await gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${month}!A9:L`,
+  });
+
+  let rows = response.result.values || [];
+  
+  // 집단 관리자인 경우 해당 집단 데이터만 필터링
+  if (!isSuperManager && managerGroup) {
+    rows = rows.filter(row => row[11] === managerGroup);
+  }
+
+  const stats = {
+    totalReporters: rows.length,
+    totalBibleStudies: 0,
+    rpCount: 0,
+    rpHours: 0,
+    rpStudies: 0,
+    apCount: 0,
+    apHours: 0,
+    apStudies: 0,
+  };
+
+  // 각 행의 데이터 분석
+  rows.forEach(row => {
+    const isRp = (row[8] || '').toUpperCase() === 'RP';
+    const isAp = (row[8] || '').toUpperCase() === 'AP';
+    const hours = parseInt(row[4] || '0');
+    const studies = parseInt(row[3] || '0');
+
+    if (isRp) {
+      stats.rpCount++;
+      stats.rpHours += hours;
+      stats.rpStudies += studies;
+    } else if (isAp) {
+      stats.apCount++;
+      stats.apHours += hours;
+      stats.apStudies += studies;
+    }
+    
+    stats.totalBibleStudies += studies;
+  });
+
+  stats.publisherCount = stats.totalReporters - stats.rpCount - stats.apCount;
+  return stats;
+};
+
+export const getMonthStatus = async (month: string) => {
+  await getAccessToken();
+  
+  const response = await gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${month}!M1`,
+  });
+
+  const isClosedValue = response.result.values?.[0]?.[0];
+  const isClosed =
+    isClosedValue === true ||
+    isClosedValue === 'TRUE' ||
+    isClosedValue === 'true' ||
+    isClosedValue === 1 ||
+    isClosedValue === '1';
+
+  return { isClosed };
+};
+
+export const toggleMonthStatus = async (month: string, currentStatus: string) => {
+  await getAccessToken();
+
+  const newStatus = currentStatus === 'COMPLETED' ? 'CLOSED' : 'COMPLETED';
+  
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${month}!M1`,
+    valueInputOption: 'RAW',
+    requestBody: {
+      values: [[newStatus]]
+    }
+  });
+
+  return { status: newStatus };
+};
