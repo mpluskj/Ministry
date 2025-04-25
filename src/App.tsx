@@ -8,63 +8,51 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 import './App.css';
 
 function App() {
-  const [managerEmail, setManagerEmail] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [initError, setInitError] = useState<string | null>(null);
+  const [isManager, setIsManager] = useState<boolean>(false);
+  const [managerEmail, setManagerEmail] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const initAPI = async () => {
+    const init = async () => {
       try {
         await initGoogleAPI();
-        setIsInitializing(false);
-      } catch (error) {
-        console.error('Google API 초기화 실패:', error);
-        setInitError('Google API 초기화에 실패했습니다. 페이지를 새로고침 해주세요.');
-        setIsInitializing(false);
+      } catch (err) {
+        setError('Google API 초기화에 실패했습니다.');
+        console.error('Failed to initialize Google API:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    initAPI();
+    init();
   }, []);
 
-  const handleManagerLogin = (email: string) => {
-    setManagerEmail(email);
-  };
-
-  const handleManagerLogout = () => {
-    setManagerEmail(null);
-  };
-
-  if (isInitializing) {
+  if (loading) {
     return (
       <Box sx={{ 
         display: 'flex', 
         flexDirection: 'column',
         alignItems: 'center', 
-        justifyContent: 'center', 
-        minHeight: '100vh' 
+        justifyContent: 'center',
+        height: '100vh'
       }}>
         <CircularProgress />
-        <Typography sx={{ mt: 2 }}>초기화 중...</Typography>
+        <Typography sx={{ mt: 2 }}>로딩 중...</Typography>
       </Box>
     );
   }
 
-  if (initError) {
+  if (error) {
     return (
       <Box sx={{ 
         display: 'flex', 
         flexDirection: 'column',
         alignItems: 'center', 
-        justifyContent: 'center', 
-        minHeight: '100vh' 
+        justifyContent: 'center',
+        height: '100vh'
       }}>
-        <Typography color="error">{initError}</Typography>
-        <Typography sx={{ mt: 1 }}>
-          <button onClick={() => window.location.reload()}>
-            새로고침
-          </button>
-        </Typography>
+        <Typography color="error">{error}</Typography>
       </Box>
     );
   }
@@ -77,13 +65,19 @@ function App() {
           <Route 
             path="/manager" 
             element={
-              managerEmail ? (
-                <ManagerDashboard 
-                  email={managerEmail} 
-                  onLogout={handleManagerLogout}
-                />
+              !isManager ? (
+                <ManagerLogin onLogin={(email) => {
+                  setIsManager(true);
+                  setManagerEmail(email);
+                }} />
               ) : (
-                <ManagerLogin onLogin={handleManagerLogin} />
+                <ManagerDashboard 
+                  email={managerEmail}
+                  onLogout={() => {
+                    setIsManager(false);
+                    setManagerEmail('');
+                  }}
+                />
               )
             } 
           />

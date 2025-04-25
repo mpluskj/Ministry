@@ -324,7 +324,7 @@ export default function MinistryReportForm() {
                     }
                   }}
                   fullWidth
-                  disableUnderline
+                  InputProps={{ disableUnderline: true }}
                 />
               </FormControl>
               <Typography>시간</Typography>
