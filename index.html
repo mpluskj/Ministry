@@ -11,6 +11,17 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Start Single Page Apps for GitHub Pages -->
     <script type="text/javascript">
+      (function() {
+        // 저장된 경로가 있으면 복원
+        var path = sessionStorage.getItem('path');
+        if (path) {
+          sessionStorage.removeItem('path');
+          var newPath = '/Ministry' + path;
+          if (window.location.pathname === '/Ministry/') {
+            window.history.replaceState(null, null, newPath);
+          }
+        }
+      })();
       // Single Page Apps for GitHub Pages
       // MIT License
       // https://github.com/rafgraph/spa-github-pages
