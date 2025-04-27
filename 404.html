@@ -4,16 +4,21 @@
     <meta charset="utf-8">
     <title>봉사 보고 시스템</title>
     <script type="text/javascript">
-      // GitHub Pages용 SPA 리다이렉션
-      var segmentCount = 1;
-      var location = window.location;
-      var redirect = sessionStorage.redirect;
-      delete sessionStorage.redirect;
-      if (redirect && redirect != location.href) {
-        history.replaceState(null, null, redirect);
-      }
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
     </script>
+    <meta http-equiv="refresh" content="0;URL='/Ministry'">
   </head>
-  <body>
-  </body>
+  <body></body>
 </html>
