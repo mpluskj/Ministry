@@ -11,24 +11,19 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Start Single Page Apps for GitHub Pages -->
     <script type="text/javascript">
-      // Fix cookie policy for Google OAuth
-      document.cookie = "same-site-cookie=foo; SameSite=Lax";
-      document.cookie = "cross-site-cookie=bar; SameSite=None; Secure";
-      
-      // Single Page Apps for GitHub Pages
       (function(l) {
-        if (l.search[1] === '/' ) {
+        if (l.search[1] === '/') {
           var decoded = l.search.slice(1).split('&').map(function(s) { 
             return s.replace(/~and~/g, '&')
           }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
+          l.replace(
+            l.pathname.slice(0, -1) + decoded + l.hash
           );
         }
       }(window.location))
     </script>
     <!-- End Single Page Apps for GitHub Pages -->
-    <script type="module" crossorigin src="/Ministry/assets/index-BY9xJPmg.js"></script>
+    <script type="module" crossorigin src="/Ministry/assets/index-pTetpk9H.js"></script>
     <link rel="stylesheet" crossorigin href="/Ministry/assets/index-ghf2qIHX.css">
   </head>
   <body>
