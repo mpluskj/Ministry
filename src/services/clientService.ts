@@ -1,5 +1,65 @@
 // Google Apps Script 웹 앱 URL
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby87l3h6llqjQslBgLuJXuw2zbaM4sFWeylRjoO9GlG0-0Vn7R4Hqh9SUqjanFY3h8J/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUSlqPLNeIANcSIsy9dDv4ObHNdD_V2wvbf20CrYHvnr58iu3j6WKVlQFsyq2KS4c/exec';
+
+
+// 봉사연도 목록 조회
+export const getServiceYears = async () => {
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getServiceYears`, {
+      method: 'GET',
+      mode: 'cors',
+    });
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || '봉사연도 목록 조회 실패');
+    }
+    return result.data;
+  } catch (error) {
+    console.error('Error getting service years:', error);
+    throw new Error('봉사연도 목록 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 봉사연도 변경
+export const changeServiceYear = async (spreadsheetId: string) => {
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify({ action: 'changeServiceYear', spreadsheetId }),
+    });
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || '봉사연도 변경 실패');
+    }
+    return result;
+  } catch (error) {
+    console.error('Error changing service year:', error);
+    throw new Error('봉사연도 변경 중 오류가 발생했습니다.');
+  }
+};
+
+// 구글시트 정보 조회
+export const getSpreadsheetInfo = async () => {
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getSpreadsheetInfo`, {
+      method: 'GET',
+      mode: 'cors',
+    });
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || '구글시트 정보 조회 실패');
+    }
+    return result.data;
+  } catch (error) {
+    console.error('Error getting spreadsheet info:', error);
+    throw new Error('구글시트 정보 조회 중 오류가 발생했습니다.');
+  }
+};
+
 
 export interface MinistryReport {
   name: string;
@@ -74,5 +134,156 @@ export const checkMonthStatus = async (month: string) => {
     console.error('Error checking month status via Apps Script:', error);
     // 네트워크 오류 등 발생 시 isClosed를 null로 반환하여 UI에서 처리하도록 함
     return { isClosed: null };
+  }
+};
+
+// 관리자 유형 확인
+export const checkManagerType = async (email: string) => {
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=checkManager&email=${encodeURIComponent(email)}`, {
+      method: 'GET',
+      mode: 'cors',
+    });
+
+    const result = await response.json();
+    return {
+      type: result.type, // 'super' | 'group' | null
+      groupName: result.groupName, // 집단 관리자인 경우 집단명
+      name: result.name // 관리자명(B열)
+    };
+  } catch (error) {
+    console.error('Error checking manager type:', error);
+    throw new Error('관리자 권한 확인 중 오류가 발생했습니다.');
+  }
+};
+
+// 월별 통계 데이터 조회
+export const getMonthlyStats = async (month: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=monthlyStats&month=${encodeURIComponent(month)}&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting monthly stats:', error);
+    throw new Error('월별 통계 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 모든 월별 통계 데이터 한번에 조회
+export const getAllMonthlyStats = async (email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=allMonthlyStats&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting all monthly stats:', error);
+    throw new Error('전체 월별 통계 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 월별 상세 보고 조회
+export const getMonthlyDetail = async (month: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=monthlyDetail&month=${encodeURIComponent(month)}&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting monthly detail:', error);
+    throw new Error('월별 상세 보고 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 마감 상태 토글
+export const toggleMonthStatus = async (month: string, currentStatus: string) => {
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify({
+        action: 'toggleStatus',
+        month,
+        currentStatus
+      }),
+    });
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error toggling month status:', error);
+    throw new Error('마감 상태 변경 중 오류가 발생했습니다.');
+  }
+};
+
+// 연간 봉사 기록 조회
+export const getYearlyReport = async (name: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=yearlyReport&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting yearly report:', error);
+    throw new Error('연간 봉사 기록 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 미보고자 확인
+export const getUnreportedMembers = async (month: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=getUnreportedMembers&month=${encodeURIComponent(month)}&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting unreported members:', error);
+    throw new Error('미보고자 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 전체명단 조회 (전도인카드 출력용)
+export const getAllMembers = async (email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=getAllMembers&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting all members:', error);
+    throw new Error('전체명단 조회 중 오류가 발생했습니다.');
   }
 };
