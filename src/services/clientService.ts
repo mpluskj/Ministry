@@ -88,7 +88,7 @@ export const submitMinistryReport = async (data: MinistryReport) => {
         // Content-Type을 명시적으로 설정하지 않아도 Apps Script가 처리할 수 있지만,
         // 명확성을 위해 text/plain으로 설정하는 것이 좋습니다. (Apps Script는 JSON을 직접 파싱)
         // 'Content-Type': 'application/json' 대신 아래 사용
-         'Content-Type': 'text/plain;charset=utf-8', // Apps Script doPost는 e.postData.contents를 사용
+        'Content-Type': 'text/plain;charset=utf-8', // Apps Script doPost는 e.postData.contents를 사용
       },
       // JSON 문자열로 변환하여 전송
       body: JSON.stringify(data),
@@ -122,9 +122,9 @@ export const checkMonthStatus = async (month: string) => {
     const result = await response.json();
 
     if (result.error) {
-       console.error('Apps Script Error (checkMonthStatus):', result.error);
-       // 오류가 있더라도 isClosed 상태를 반환할 수 있도록 처리 (Apps Script에서 null 반환 시)
-       return { isClosed: null };
+      console.error('Apps Script Error (checkMonthStatus):', result.error);
+      // 오류가 있더라도 isClosed 상태를 반환할 수 있도록 처리 (Apps Script에서 null 반환 시)
+      return { isClosed: null };
     }
 
     // isClosed가 boolean이 아닐 경우를 대비하여 명시적으로 boolean 변환
@@ -175,11 +175,11 @@ export const getMonthlyStats = async (month: string, email: string) => {
   }
 };
 
-// 모든 월별 통계 데이터 한번에 조회
-export const getAllMonthlyStats = async (email: string) => {
+// 집계 데이터 조회 (대시보드 전체 데이터)
+export const getAggregateData = async (email: string) => {
   try {
     const response = await fetch(
-      `${APPS_SCRIPT_URL}?action=allMonthlyStats&email=${encodeURIComponent(email)}`,
+      `${APPS_SCRIPT_URL}?action=aggregateData&email=${encodeURIComponent(email)}`,
       {
         method: 'GET',
         mode: 'cors',
@@ -188,10 +188,12 @@ export const getAllMonthlyStats = async (email: string) => {
 
     return await response.json();
   } catch (error) {
-    console.error('Error getting all monthly stats:', error);
-    throw new Error('전체 월별 통계 조회 중 오류가 발생했습니다.');
+    console.error('Error getting aggregate data:', error);
+    throw new Error('집계 데이터 조회 중 오류가 발생했습니다.');
   }
 };
+
+
 
 // 월별 상세 보고 조회
 export const getMonthlyDetail = async (month: string, email: string) => {
