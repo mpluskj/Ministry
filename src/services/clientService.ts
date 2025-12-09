@@ -1,5 +1,65 @@
 // Google Apps Script 웹 앱 URL
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby87l3h6llqjQslBgLuJXuw2zbaM4sFWeylRjoO9GlG0-0Vn7R4Hqh9SUqjanFY3h8J/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUSlqPLNeIANcSIsy9dDv4ObHNdD_V2wvbf20CrYHvnr58iu3j6WKVlQFsyq2KS4c/exec';
+
+
+// 봉사연도 목록 조회
+export const getServiceYears = async () => {
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getServiceYears`, {
+      method: 'GET',
+      mode: 'cors',
+    });
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || '봉사연도 목록 조회 실패');
+    }
+    return result.data;
+  } catch (error) {
+    console.error('Error getting service years:', error);
+    throw new Error('봉사연도 목록 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 봉사연도 변경
+export const changeServiceYear = async (spreadsheetId: string) => {
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify({ action: 'changeServiceYear', spreadsheetId }),
+    });
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || '봉사연도 변경 실패');
+    }
+    return result;
+  } catch (error) {
+    console.error('Error changing service year:', error);
+    throw new Error('봉사연도 변경 중 오류가 발생했습니다.');
+  }
+};
+
+// 구글시트 정보 조회
+export const getSpreadsheetInfo = async () => {
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getSpreadsheetInfo`, {
+      method: 'GET',
+      mode: 'cors',
+    });
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || '구글시트 정보 조회 실패');
+    }
+    return result.data;
+  } catch (error) {
+    console.error('Error getting spreadsheet info:', error);
+    throw new Error('구글시트 정보 조회 중 오류가 발생했습니다.');
+  }
+};
+
 
 export interface MinistryReport {
   name: string;
@@ -28,7 +88,7 @@ export const submitMinistryReport = async (data: MinistryReport) => {
         // Content-Type을 명시적으로 설정하지 않아도 Apps Script가 처리할 수 있지만,
         // 명확성을 위해 text/plain으로 설정하는 것이 좋습니다. (Apps Script는 JSON을 직접 파싱)
         // 'Content-Type': 'application/json' 대신 아래 사용
-         'Content-Type': 'text/plain;charset=utf-8', // Apps Script doPost는 e.postData.contents를 사용
+        'Content-Type': 'text/plain;charset=utf-8', // Apps Script doPost는 e.postData.contents를 사용
       },
       // JSON 문자열로 변환하여 전송
       body: JSON.stringify(data),
@@ -53,18 +113,19 @@ export const submitMinistryReport = async (data: MinistryReport) => {
 // 월별 마감 상태 확인 (Apps Script 사용)
 export const checkMonthStatus = async (month: string) => {
   try {
-    // GET 요청으로 Apps Script URL에 month 파라미터를 추가하여 호출
-    const response = await fetch(`${APPS_SCRIPT_URL}?month=${encodeURIComponent(month)}`, {
+    // GET 요청으로 Apps Script URL에 action과 month 파라미터를 추가하여 호출
+    // 집계 시트 K열에서 마감 상태 확인
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=checkStatus&month=${encodeURIComponent(month)}`, {
       method: 'GET',
-      mode: 'cors', // 또는 필요에 따라 다른 모드
+      mode: 'cors',
     });
 
     const result = await response.json();
 
     if (result.error) {
-       console.error('Apps Script Error (checkMonthStatus):', result.error);
-       // 오류가 있더라도 isClosed 상태를 반환할 수 있도록 처리 (Apps Script에서 null 반환 시)
-       return { isClosed: null };
+      console.error('Apps Script Error (checkMonthStatus):', result.error);
+      // 오류가 있더라도 isClosed 상태를 반환할 수 있도록 처리 (Apps Script에서 null 반환 시)
+      return { isClosed: null };
     }
 
     // isClosed가 boolean이 아닐 경우를 대비하여 명시적으로 boolean 변환
@@ -76,3 +137,182 @@ export const checkMonthStatus = async (month: string) => {
     return { isClosed: null };
   }
 };
+
+// 관리자 유형 확인
+export const checkManagerType = async (email: string) => {
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=checkManager&email=${encodeURIComponent(email)}`, {
+      method: 'GET',
+      mode: 'cors',
+    });
+
+    const result = await response.json();
+    return {
+      type: result.type, // 'super' | 'group' | null
+      groupName: result.groupName, // 집단 관리자인 경우 집단명
+      name: result.name // 관리자명(B열)
+    };
+  } catch (error) {
+    console.error('Error checking manager type:', error);
+    throw new Error('관리자 권한 확인 중 오류가 발생했습니다.');
+  }
+};
+
+// 월별 통계 데이터 조회
+export const getMonthlyStats = async (month: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=monthlyStats&month=${encodeURIComponent(month)}&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting monthly stats:', error);
+    throw new Error('월별 통계 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 집계 데이터 조회 (대시보드 전체 데이터)
+export const getAggregateData = async (email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=aggregateData&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting aggregate data:', error);
+    throw new Error('집계 데이터 조회 중 오류가 발생했습니다.');
+  }
+};
+
+
+
+// 월별 상세 보고 조회
+export const getMonthlyDetail = async (month: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=monthlyDetail&month=${encodeURIComponent(month)}&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting monthly detail:', error);
+    throw new Error('월별 상세 보고 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 마감 상태 토글
+export const toggleMonthStatus = async (month: string, currentStatus: string) => {
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify({
+        action: 'toggleStatus',
+        month,
+        currentStatus
+      }),
+    });
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error toggling month status:', error);
+    throw new Error('마감 상태 변경 중 오류가 발생했습니다.');
+  }
+};
+
+// 연간 봉사 기록 조회
+export const getYearlyReport = async (name: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=yearlyReport&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting yearly report:', error);
+    throw new Error('연간 봉사 기록 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 미보고자 확인
+export const getUnreportedMembers = async (month: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=getUnreportedMembers&month=${encodeURIComponent(month)}&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting unreported members:', error);
+    throw new Error('미보고자 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 전체명단 조회 (전도인카드 출력용)
+export const getAllMembers = async (email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=getAllMembers&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting all members:', error);
+    throw new Error('전체명단 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 초기 대시보드 데이터 통합 조회 (성능 최적화)
+// getServiceYears + getSpreadsheetInfo + checkManagerType + getAggregateData를 하나로 통합
+export const getInitialDashboardData = async (email: string) => {
+  try {
+    const response = await fetch(
+      `${APPS_SCRIPT_URL}?action=getInitialDashboardData&email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        mode: 'cors',
+      }
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || '초기 대시보드 데이터 조회 실패');
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('Error getting initial dashboard data:', error);
+    throw new Error('초기 대시보드 데이터 조회 중 오류가 발생했습니다.');
+  }
+};
+

@@ -16,18 +16,22 @@ export default function ManagerLogin({ onLogin }: ManagerLoginProps) {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
-  const handleSuccess = (response: CredentialResponse) => {
+  const handleSuccess = async (response: CredentialResponse) => {
     try {
       if (!response.credential) {
         throw new Error('로그인 응답에 인증 정보가 없습니다.');
       }
 
       const decoded = jwtDecode<DecodedToken>(response.credential);
-      onLogin(decoded.email);
-      navigate('/dashboard');
+      await onLogin(decoded.email);
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Login error:', error);
-      setError('로그인 중 오류가 발생했습니다.');
+      setError(
+        error instanceof Error 
+          ? error.message 
+          : '로그인 중 오류가 발생했습니다.'
+      );
     }
   };
 
@@ -47,6 +51,8 @@ export default function ManagerLogin({ onLogin }: ManagerLoginProps) {
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => setError('로그인 중 오류가 발생했습니다.')}
+          useOneTap
+          type="standard"
         />
       </Box>
 
