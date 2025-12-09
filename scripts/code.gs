@@ -63,7 +63,8 @@ function doPost(e) {
 
     // 2. 전체명단에서 사용자 정보 조회 (A: 이름, B: 직책, C: RP, F: 집단)
     const listSheet = sheet.getSheetByName('전체명단');
-    const listData = listSheet.getRange('A2:F' + listSheet.getLastRow()).getValues(); // A2부터 시작한다고 가정
+    const listData = listSheet.getRange('A2:F200').getValues()
+      .filter(row => row[0] || row[1] || row[2] || row[3] || row[4] || row[5]); // 빈 행 제거
     let position = '';
     let rp = '';
     let group = '';
@@ -121,7 +122,8 @@ function doPost(e) {
 function getMonthlyDetail(sheet, month, email) {
   try {
     const managerSheet = sheet.getSheetByName('집단명');
-    const managerData = managerSheet.getRange('A2:C' + managerSheet.getLastRow()).getValues();
+    const managerData = managerSheet.getRange('A1:C20').getValues()
+      .filter(row => row[0] || row[1] || row[2]); // 빈 행 제거
     const isSuperManager = managerData.slice(0, 2).some(row => row[2] === email);
     const groupManager = managerData.slice(4).find(row => row[2] === email);
     const managerGroup = groupManager ? groupManager[0] : null;
@@ -132,8 +134,8 @@ function getMonthlyDetail(sheet, month, email) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // A9부터 K200까지 데이터 범위 설정 (사용자 요구사항에 맞게 조정)
-    const dataRange = monthSheet.getRange('A9:K200');
+    // A9부터 K120까지 데이터 범위 설정 (최적화: 범위 축소)
+    const dataRange = monthSheet.getRange('A9:K120');
     let rows = dataRange.getValues().filter(row => {
       // 이름(A열)이 있는 행만 필터링 (빈 행 제외)
       return row[0] && String(row[0]).trim() !== '';
@@ -176,14 +178,16 @@ function getMonthlyDetail(sheet, month, email) {
 function getYearlyReport(sheet, name, email) {
   try {
     const managerSheet = sheet.getSheetByName('집단명');
-    const managerData = managerSheet.getRange('A2:C' + managerSheet.getLastRow()).getValues();
+    const managerData = managerSheet.getRange('A1:C20').getValues()
+      .filter(row => row[0] || row[1] || row[2]); // 빈 행 제거
     const isSuperManager = managerData.slice(0, 2).some(row => row[2] === email);
     const groupManager = managerData.slice(4).find(row => row[2] === email);
     const managerGroup = groupManager ? groupManager[0] : null;
 
     // 전체명단 시트에서 사용자 정보 조회
     const listSheet = sheet.getSheetByName('전체명단');
-    const listData = listSheet.getRange('A2:L' + listSheet.getLastRow()).getValues(); // A2부터 L열까지
+    const listData = listSheet.getRange('A2:L200').getValues()
+      .filter(row => row[0] || row[1]); // 빈 행 제거 (이름 또는 직책이 있는 행만)
     let userInfo = {};
     for (let i = 0; i < listData.length; i++) {
       if (listData[i][0] === name) {
@@ -212,7 +216,7 @@ function getYearlyReport(sheet, name, email) {
       const monthSheet = sheet.getSheetByName(month);
       let recordFound = false;
       if (monthSheet) {
-        const dataRange = monthSheet.getRange('A9:K200');
+        const dataRange = monthSheet.getRange('A9:K120');
         let rows = dataRange.getValues().filter(row => {
           return row[0] && String(row[0]).trim() === name;
         });
@@ -331,7 +335,8 @@ function doGet(e) {
           .setMimeType(ContentService.MimeType.JSON);
       }
       
-      const managerData = managerSheet.getRange('A2:C' + managerSheet.getLastRow()).getValues();
+      const managerData = managerSheet.getRange('A1:C20').getValues()
+        .filter(row => row[0] || row[1] || row[2]); // 빈 행 제거
       
       // 이메일로 사용자 정보 찾기 (C열, index 2)
       const userRow = managerData.find(row => row[2] && row[2].toString().trim().toLowerCase() === email.trim().toLowerCase());
@@ -500,7 +505,8 @@ function doGet(e) {
 function getMonthlyStats(sheet, month, email) {
   try {
     const managerSheet = sheet.getSheetByName('집단명');
-    const managerData = managerSheet.getRange('A2:C' + managerSheet.getLastRow()).getValues();
+    const managerData = managerSheet.getRange('A1:C20').getValues()
+      .filter(row => row[0] || row[1] || row[2]); // 빈 행 제거
     const isSuperManager = managerData.slice(0, 2).some(row => row[2] === email);
     const groupManager = managerData.slice(4).find(row => row[2] === email);
     const managerGroup = groupManager ? groupManager[0] : null;
@@ -511,8 +517,8 @@ function getMonthlyStats(sheet, month, email) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // A9부터 K200까지 데이터 범위 설정 (사용자 요구사항에 맞게 조정)
-    const dataRange = monthSheet.getRange('A9:K200');
+    // A9부터 K120까지 데이터 범위 설정 (최적화: 범위 축소)
+    const dataRange = monthSheet.getRange('A9:K120');
     let rows = dataRange.getValues().filter(row => {
       // 이름(A열)이 있는 행만 필터링 (빈 행 제외)
       return row[0] && String(row[0]).trim() !== '';
@@ -688,20 +694,22 @@ function getSpreadsheetInfo() {
 function getUnreportedMembers(sheet, month, email) {
   try {
     const managerSheet = sheet.getSheetByName('집단명');
-    const managerData = managerSheet.getRange('A2:C' + managerSheet.getLastRow()).getValues();
+    const managerData = managerSheet.getRange('A1:C20').getValues()
+      .filter(row => row[0] || row[1] || row[2]); // 빈 행 제거
     const isSuperManager = managerData.slice(0, 2).some(row => row[2] === email);
     const groupManager = managerData.slice(4).find(row => row[2] === email);
     const managerGroup = groupManager ? groupManager[0] : null;
 
     // 전체명단에서 모든 사람 목록 가져오기
     const listSheet = sheet.getSheetByName('전체명단');
-    const listData = listSheet.getRange('A2:F' + listSheet.getLastRow()).getValues();
+    const listData = listSheet.getRange('A2:F200').getValues()
+      .filter(row => row[0] || row[1]); // 빈 행 제거
     
     // 해당 월 시트에서 보고한 사람들 목록 가져오기
     const monthSheet = sheet.getSheetByName(month);
     let reportedNames = [];
     if (monthSheet) {
-      const dataRange = monthSheet.getRange('A9:K200');
+      const dataRange = monthSheet.getRange('A9:K120');
       const rows = dataRange.getValues().filter(row => {
         return row[0] && String(row[0]).trim() !== '';
       });
@@ -741,14 +749,16 @@ function getUnreportedMembers(sheet, month, email) {
 function getAllMembers(sheet, email) {
   try {
     const managerSheet = sheet.getSheetByName('집단명');
-    const managerData = managerSheet.getRange('A2:C' + managerSheet.getLastRow()).getValues();
+    const managerData = managerSheet.getRange('A1:C20').getValues()
+      .filter(row => row[0] || row[1] || row[2]); // 빈 행 제거
     const isSuperManager = managerData.slice(0, 2).some(row => row[2] === email);
     const groupManager = managerData.slice(4).find(row => row[2] === email);
     const managerGroup = groupManager ? groupManager[0] : null;
 
     // 전체명단에서 모든 사람 목록 가져오기
     const listSheet = sheet.getSheetByName('전체명단');
-    const listData = listSheet.getRange('A2:F' + listSheet.getLastRow()).getValues();
+    const listData = listSheet.getRange('A2:F200').getValues()
+      .filter(row => row[0] || row[1]); // 빈 행 제거
     
     let allMembers = [];
     for (let i = 0; i < listData.length; i++) {
@@ -782,7 +792,8 @@ function getAllMembers(sheet, email) {
 function getAggregateData(sheet, email) {
   try {
     const managerSheet = sheet.getSheetByName('집단명');
-    const managerData = managerSheet.getRange('A2:C' + managerSheet.getLastRow()).getValues();
+    const managerData = managerSheet.getRange('A1:C20').getValues()
+      .filter(row => row[0] || row[1] || row[2]); // 빈 행 제거
     const isSuperManager = managerData.slice(0, 2).some(row => row[2] === email);
     // groupManager logic potentially needed if we want to secure data per group in future
     // For now, aggregate data is summary level.
@@ -892,7 +903,8 @@ function getInitialDashboardData(email) {
     
     // 3. 관리자 정보
     const managerSheet = sheet.getSheetByName('집단명');
-    const managerData = managerSheet.getRange('A2:C' + managerSheet.getLastRow()).getValues();
+    const managerData = managerSheet.getRange('A1:C20').getValues()
+      .filter(row => row[0] || row[1] || row[2]); // 빈 행 제거
     const userRow = managerData.find(row => row[2] && row[2].toString().trim().toLowerCase() === email.trim().toLowerCase());
     
     let managerInfo = { type: null, groupName: null, name: null };
