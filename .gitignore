@@ -38,3 +38,14 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Development artifacts (temporary files)
+implementation_plan.md
+status_toggle_optimization_plan.md
+task.md
+walkthrough.md
+CLEANUP_PLAN.md
+
+# Duplicate font files (keep only in public/)
+/GowunDodum-Regular.ttf
+
