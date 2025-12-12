@@ -259,7 +259,7 @@ export async function generatePublisherCard(
                 const rect = widget.getRectangle();
                 widget.setRectangle({
                     x: rect.x,
-                    y: rect.y +3, // Match the general shift
+                    y: rect.y + 4, // Match the general shift
                     width: rect.width,
                     height: rect.height
                 });
@@ -283,7 +283,7 @@ export async function generatePublisherCard(
                 const rect = widget.getRectangle();
                 widget.setRectangle({
                     x: rect.x,
-                    y: rect.y, // Match the general shift
+                    y: rect.y + 2,// Match the general shift
                     width: rect.width,
                     height: rect.height
                 });
