@@ -87,6 +87,7 @@ export default function MonthlyReportDetail({
   // Mobile check
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isLandscape = useMediaQuery('(orientation: landscape)');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 전도인카드 필터링을 위한 상태 변수
@@ -456,6 +457,56 @@ export default function MonthlyReportDetail({
     }
   };
 
+  const filterControls = (isHeader: boolean) => (
+    <>
+      <FormControl size="small" sx={{
+        minWidth: isHeader ? 80 : 120,
+        flex: isHeader ? '0 0 auto' : { xs: 1, sm: '0 0 auto' }
+      }}>
+        <InputLabel 
+          id={`group-filter-label-${isHeader ? 'header' : 'body'}`}
+          sx={isHeader ? { top: '-4px', '&.MuiInputLabel-shrink': { top: '0' } } : undefined}
+        >
+          집단
+        </InputLabel>
+        <Select
+          labelId={`group-filter-label-${isHeader ? 'header' : 'body'}`}
+          value={groupFilter}
+          label="집단"
+          onChange={handleGroupFilterChange}
+          sx={{ height: isHeader ? 32 : undefined }}
+        >
+          {availableGroups.map((group) => (
+            <MenuItem key={group} value={group}>{group}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <FormControl size="small" sx={{
+        minWidth: isHeader ? 80 : 120,
+        flex: isHeader ? '0 0 auto' : { xs: 1, sm: '0 0 auto' }
+      }}>
+        <InputLabel 
+          id={`division-filter-label-${isHeader ? 'header' : 'body'}`}
+          sx={isHeader ? { top: '-4px', '&.MuiInputLabel-shrink': { top: '0' } } : undefined}
+        >
+          구분
+        </InputLabel>
+        <Select
+          labelId={`division-filter-label-${isHeader ? 'header' : 'body'}`}
+          value={divisionFilter}
+          label="구분"
+          onChange={handleDivisionFilterChange}
+          sx={{ height: isHeader ? 32 : undefined }}
+        >
+          {availableDivisions.map((div) => (
+            <MenuItem key={div} value={div}>{div}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </>
+  );
+
   return (
     <Dialog
       open={open}
@@ -498,10 +549,22 @@ export default function MonthlyReportDetail({
             fontWeight: 'bold', 
             overflow: 'hidden', 
             textOverflow: 'ellipsis', 
-            whiteSpace: 'nowrap' 
+            whiteSpace: 'nowrap',
+            mr: (isMobile && isLandscape) ? 1 : 0
           }}>
             {month} 상세 보고
           </Typography>
+
+          {isMobile && isLandscape && (
+             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', overflow: 'auto' }}>
+               {filterControls(true)}
+               <Typography variant="body2" sx={{ whiteSpace: 'nowrap', fontWeight: 'bold' }}>
+                 총 {filteredDetails.length}명
+                 {(groupFilter !== '전체' || divisionFilter !== '전체') &&
+                    ` / ${details.length}`}
+               </Typography>
+             </Box>
+           )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -573,10 +636,10 @@ export default function MonthlyReportDetail({
       <DialogContent sx={{
         bgcolor: '#f8f9fa', // Lighter background
         color: 'text.primary',
-        p: { xs: 1, sm: 2, md: 3 }, // Responsive padding
+        p: (isMobile && isLandscape) ? 1 : { xs: 1, sm: 2, md: 3 }, // Responsive padding
         display: 'flex',
         flexDirection: 'column',
-        gap: 2
+        gap: (isMobile && isLandscape) ? 1 : 2
       }}>
         {loading ? (
           <Box sx={{
@@ -600,6 +663,7 @@ export default function MonthlyReportDetail({
         ) : (
           <>
             {/* 필터 영역 */}
+            {! (isMobile && isLandscape) && (
             <Paper elevation={0} sx={{
               display: 'flex',
               gap: 2,
@@ -610,39 +674,7 @@ export default function MonthlyReportDetail({
               borderRadius: 2,
               border: '1px solid rgba(0,0,0,0.08)'
             }}>
-              <FormControl size="small" sx={{
-                minWidth: 120,
-                flex: { xs: 1, sm: '0 0 auto' }
-              }}>
-                <InputLabel id="group-filter-label">집단</InputLabel>
-                <Select
-                  labelId="group-filter-label"
-                  value={groupFilter}
-                  label="집단"
-                  onChange={handleGroupFilterChange}
-                >
-                  {availableGroups.map((group) => (
-                    <MenuItem key={group} value={group}>{group}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl size="small" sx={{
-                minWidth: 120,
-                flex: { xs: 1, sm: '0 0 auto' }
-              }}>
-                <InputLabel id="division-filter-label">구분</InputLabel>
-                <Select
-                  labelId="division-filter-label"
-                  value={divisionFilter}
-                  label="구분"
-                  onChange={handleDivisionFilterChange}
-                >
-                  {availableDivisions.map((division) => (
-                    <MenuItem key={division} value={division}>{division}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {filterControls(false)}
 
               {(groupFilter !== '전체' || divisionFilter !== '전체') && (
                 <IconButton
@@ -666,6 +698,7 @@ export default function MonthlyReportDetail({
                 </Typography>
               </Box>
             </Paper>
+            )}
 
             <TableContainer
               component={Paper}
