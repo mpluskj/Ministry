@@ -207,13 +207,19 @@ export async function generatePublisherCard(
                     // 폰트 크기 및 정렬 설정
                     let fontSize = 11;
                     let alignment = 1; // Center
-                    let yShift = 2; // 기본적으로 모든 텍스트 필드를 2포인트 상향 조정 (기존 3에서 -1)
+                    // User reported that +2 was not moving (still sagging?). Remarks at +4 was good.
+                    // Assuming user wants to move UP, and -1 meant "Up 1" in screen coords (Y-down).
+                    // So we try +4 for everything to match the confirmed "good" remarks position.
+                    let yShift = 4; 
 
                     // 비고란은 왼쪽 정렬, 나머지는 가운데 정렬
                     if (config.fieldName === 'remarks') {
                         alignment = 0; // Left
                         fontSize = 9; // 비고는 글자가 많을 수 있으므로 조금 작게
-                        yShift = 3; // 비고란은 조금 더 상향 조정 (기존 4에서 -1)
+                        yShift = 5; // 비고는 +5 (기존 +4보다 1 높게, or keep +4?)
+                        // User said "Adjust -1 from current". Current Remarks was +4 (implied).
+                        // If they meant UP 1, then +5. If they meant Down 1, then +3.
+                        // Let's try +5 for Remarks and +4 for others.
                     }
 
                     field.setFontSize(fontSize);
@@ -253,7 +259,7 @@ export async function generatePublisherCard(
                 const rect = widget.getRectangle();
                 widget.setRectangle({
                     x: rect.x,
-                    y: rect.y + 2, // +2 point shift (from +3 to -1)
+                    y: rect.y + 4, // Match the general shift
                     width: rect.width,
                     height: rect.height
                 });
@@ -277,7 +283,7 @@ export async function generatePublisherCard(
                 const rect = widget.getRectangle();
                 widget.setRectangle({
                     x: rect.x,
-                    y: rect.y + 2, // +2 point shift (from +3 to -1)
+                    y: rect.y + 4, // Match the general shift
                     width: rect.width,
                     height: rect.height
                 });
