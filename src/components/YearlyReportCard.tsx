@@ -227,7 +227,7 @@ export default function YearlyReportCard({
               <Table size="small" sx={{ 
                 '& .MuiTableCell-root': { 
                   borderColor: 'divider',
-                  padding: '5px',
+                  padding: '2px',
                   fontSize: '0.875rem',
                   border: '1px solid rgb(80, 80, 80)'
                 }

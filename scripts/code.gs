@@ -118,6 +118,65 @@ function doPost(e) {
   }
 }
 
+// 집단별 통계 표 찾기 헬퍼 함수
+function findGroupTable(sheet, groupName) {
+  const data = sheet.getDataRange().getValues();
+  let startRow = -1;
+  let startCol = -1;
+  
+  // 전체 데이터 순회하여 집단명 찾기
+  for (let r = 0; r < data.length; r++) {
+    for (let c = 0; c < data[r].length; c++) {
+      if (data[r][c] && String(data[r][c]).trim() === String(groupName).trim()) {
+        startRow = r;
+        startCol = c;
+        break;
+      }
+    }
+    if (startRow !== -1) break;
+  }
+  
+  if (startRow === -1) return null;
+  
+  // 표 구조 가정:
+  // startRow: 집단명 (Title)
+  // startRow + 1: 헤더 (월, 총 보고자 수, ...)
+  // startRow + 2 ~ startRow + 13: 데이터 (9월 ~ 8월, 12개월)
+  
+  // 데이터가 충분한지 확인
+  if (startRow + 13 >= data.length) return null;
+  
+  const tableData = [];
+  // 12개월 데이터 추출
+  for (let i = 2; i < 14; i++) {
+    // startRow + i 행의 데이터를 가져옴 (헤더 제외)
+    // 데이터는 startCol 부터 시작한다고 가정? 
+    // 아니면 전체 행을 가져오고 인덱스로 접근?
+    // 보통 표는 집단명 바로 아래에 위치하므로, startCol을 기준으로 하거나 
+    // 전체 통계 표와 동일하게 A열부터 시작하는 것이 아니라 해당 위치 기준일 수 있음.
+    // 하지만 getAggregateData 로직은 row[index] 로 접근하므로, 
+    // 추출된 row 배열의 0번 인덱스가 '월'이어야 함.
+    
+    // 집단명이 A열에 있다면 startCol=0.
+    // 집단명이 K열에 있다면 startCol=10.
+    // 표가 그 아래에 있다면, 표의 첫 열(월)도 startCol에 위치할 가능성이 높음.
+    
+    const row = data[startRow + i];
+    // startCol 부터 시작하는 부분 배열 추출 (필요한 컬럼 수만큼)
+    // 전체 통계는 A~K (11개 컬럼) 사용.
+    // 여기서도 11개 컬럼을 가져오도록 함.
+    
+    if (startCol + 11 <= row.length) {
+      tableData.push(row.slice(startCol, startCol + 11));
+    } else {
+      // 컬럼이 부족하면 가능한 만큼 가져오거나 패딩
+       tableData.push(row.slice(startCol));
+    }
+  }
+  
+  return tableData;
+}
+
 // 월별 상세 보고 데이터 조회 함수
 function getMonthlyDetail(sheet, month, email) {
   try {
@@ -924,13 +983,35 @@ function getInitialDashboardData(email) {
     let reports = [];
     
     if (aggregateSheet) {
-      const dataRange = aggregateSheet.getRange('A1:K13');
-      const values = dataRange.getValues();
-      const dataRows = values.slice(1);
+      let dataRows = [];
+      
+      if (managerInfo.type === 'group' && managerInfo.groupName) {
+        // 집단 관리자인 경우 해당 집단 표 찾기
+        dataRows = findGroupTable(aggregateSheet, managerInfo.groupName);
+        
+        // 집단 표를 찾지 못하면 (데이터가 없거나 이름이 다르면) 빈 배열 유지 또는 전체 통계 표시?
+        // 사용자는 "집단별 집계를 볼 수 없는 문제가 있어"라고 했으므로, 없으면 빈 것이 맞음.
+        // 하지만 만약 못 찾으면 로그를 남기거나 에러 처리가 좋음.
+        if (!dataRows) {
+           Logger.log(`Group table not found for: ${managerInfo.groupName}`);
+           dataRows = []; // 못 찾음
+        }
+      } else {
+        // 전체 관리자이거나 매칭되는 집단이 없으면 전체 통계 (A1:K13)
+        const dataRange = aggregateSheet.getRange('A1:K13');
+        const values = dataRange.getValues();
+        dataRows = values.slice(1);
+      }
+
       const months = ['9월', '10월', '11월', '12월', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'];
       
       reports = months.map(month => {
+        // 데이터 행에서 해당 월 찾기 (A열이 월이라고 가정)
+        // 전체 통계는 A열이 월이지만, 집단별 표도 같은 형식이면 첫번째 열이 월이어야 함.
+        // findGroupTable에서 반환된 행의 0번째 인덱스가 월인지 확인 필요.
+        // getValues()는 해당 범위의 값을 가져오므로, 상대 좌표 0번이 월임.
         const row = dataRows.find(r => r[0] === month);
+        
         const isClosedValue = row ? row[10] : false;
         const isClosed = isClosedValue === true || String(isClosedValue).toUpperCase() === 'TRUE' || isClosedValue === 1 || String(isClosedValue) === '1';
         const status = isClosed ? 'COMPLETED' : 'OPEN';

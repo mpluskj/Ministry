@@ -212,13 +212,20 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
       overflowX: 'auto'
     }}>
       {/* 제목 영역 */}
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
+      <Box sx={{ 
+        textAlign: 'center', 
+        mb: 4,
+        bgcolor: '#ffffff',
+        borderBottom: '1px solid #e0e0e0',
+        py: 2,
+        borderRadius: 1
+      }}>
         <Typography
           variant="h4"
           component="h1"
           sx={{
             fontWeight: 'bold',
-            color: 'primary.main',
+            color: '#1a237e',
             mb: 1,
             fontSize: '1.9rem',
             textShadow: '0 2px 4px rgba(0,0,0,0.1)'
@@ -266,7 +273,7 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
         >
           <Table size="small" sx={{
             '& .MuiTableCell-root': {
-              padding: '4px 16px'
+              padding: '2px 16px'
             }
           }}>
             <TableHead>

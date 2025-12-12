@@ -587,7 +587,7 @@ export default function MonthlyReportDetail({
                 bgcolor: 'background.paper',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 overflow: 'auto',
-                height: 'calc(100vh - 100px)', // Fill available height
+                // height: 'calc(100vh - 100px)', // Fill available height - Removed to match YearlyReportCard auto height
                 borderRadius: 2,
                 '@media (max-width: 600px)': {
                   '& table': {
@@ -601,7 +601,7 @@ export default function MonthlyReportDetail({
                 sx={{
                   '& .MuiTableCell-root': {
                     borderColor: 'rgba(224, 224, 224, 0.3)',
-                    py: 1.5,
+                    py: 1,
                     px: 2
                   },
                   '& .MuiTableRow-root': {
