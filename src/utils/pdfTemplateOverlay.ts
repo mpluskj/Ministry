@@ -183,8 +183,18 @@ export async function generatePublisherCard(
                     const field = form.getTextField(fieldName);
                     field.setText(String(value));
                     if (config.multiline) field.enableMultiline();
-                    field.setFontSize(11); // Adjust font size
-                    field.setAlignment(1); // Center alignment
+                    
+                    // 폰트 크기 및 정렬 설정
+                    field.setFontSize(11); 
+                    
+                    // 비고란은 왼쪽 정렬, 나머지는 가운데 정렬
+                    if (config.fieldName === 'remarks') {
+                        field.setAlignment(0); // Left
+                        field.setFontSize(9); // 비고는 글자가 많을 수 있으므로 조금 작게
+                    } else {
+                        field.setAlignment(1); // Center
+                    }
+                    
                     field.updateAppearances(font);
                 }
             });
@@ -211,13 +221,21 @@ export async function generatePublisherCard(
          const allFields = form.getFields();
          allFields.forEach(field => {
              if (field instanceof PDFTextField) {
-                 field.setFontSize(11);
-                 // Default to center, but override for specific fields
-                 let alignment = 1; // Center
                  const fieldName = field.getName();
+                 
+                 // 기본 설정
+                 let fontSize = 11;
+                 let alignment = 1; // Center
+                 
+                 // 필드별 예외 처리
                  if (fieldName === '성명' || fieldName === '생년월일' || fieldName === '침례 일자') {
                      alignment = 0; // Left
+                 } else if (fieldName.endsWith(' 비고')) {
+                     alignment = 0; // Left
+                     fontSize = 9; // 비고는 작게
                  }
+
+                 field.setFontSize(fontSize);
                  field.setAlignment(alignment);
                  field.updateAppearances(font);
              }
