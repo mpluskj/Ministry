@@ -143,9 +143,16 @@ export async function generatePublisherCard(
 
             // Accumulate numbers in remarks
             if (record.remarks) {
-                const matches = String(record.remarks).match(/-?\d+(\.\d+)?/g);
+                // 숫자와 쉼표를 포함한 패턴 매칭 (예: 1,000)
+                const matches = String(record.remarks).match(/-?[\d,]+(\.\d+)?/g);
                 if (matches) {
-                    matches.forEach(m => totalRemarks += parseFloat(m));
+                    matches.forEach(m => {
+                        // 쉼표 제거 후 숫자로 변환
+                        const val = parseFloat(m.replace(/,/g, ''));
+                        if (!isNaN(val)) {
+                            totalRemarks += val;
+                        }
+                    });
                 }
             }
 
@@ -196,13 +203,13 @@ export async function generatePublisherCard(
                     // 폰트 크기 및 정렬 설정
                     let fontSize = 11;
                     let alignment = 1; // Center
-                    let yShift = 1; // 기본적으로 모든 텍스트 필드를 1포인트 상향 조정
+                    let yShift = 3; // 기본적으로 모든 텍스트 필드를 3포인트 상향 조정 (성서 연구, 시간 등)
 
                     // 비고란은 왼쪽 정렬, 나머지는 가운데 정렬
                     if (config.fieldName === 'remarks') {
                         alignment = 0; // Left
                         fontSize = 9; // 비고는 글자가 많을 수 있으므로 조금 작게
-                        yShift = 4; // 비고란은 더 많이 상향 조정 (이전 설정 유지)
+                        yShift = 4; // 비고란은 조금 더 상향 조정
                     }
 
                     field.setFontSize(fontSize);
@@ -242,7 +249,7 @@ export async function generatePublisherCard(
                 const rect = widget.getRectangle();
                 widget.setRectangle({
                     x: rect.x,
-                    y: rect.y + 1, // +1 point shift
+                    y: rect.y + 3, // +3 point shift
                     width: rect.width,
                     height: rect.height
                 });
@@ -266,7 +273,7 @@ export async function generatePublisherCard(
                 const rect = widget.getRectangle();
                 widget.setRectangle({
                     x: rect.x,
-                    y: rect.y + 1, // +1 point shift
+                    y: rect.y + 3, // +3 point shift
                     width: rect.width,
                     height: rect.height
                 });
