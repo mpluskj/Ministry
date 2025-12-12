@@ -38,6 +38,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import ScreenRotationIcon from '@mui/icons-material/ScreenRotation';
@@ -78,6 +79,7 @@ export default function MonthlyReportDetail({
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [yearlyReportOpen, setYearlyReportOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState<null | HTMLElement>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
   const [unreportedMembers, setUnreportedMembers] = useState<Array<{ name: string, group: string }>>([]);
@@ -274,6 +276,14 @@ export default function MonthlyReportDetail({
 
   const handleMenuClose = () => {
     setMenuAnchor(null);
+  };
+
+  const handleFilterMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setFilterMenuAnchor(event.currentTarget);
+  };
+
+  const handleFilterMenuClose = () => {
+    setFilterMenuAnchor(null);
   };
 
   // PDF 출력 함수 (상세보고)
@@ -525,9 +535,9 @@ export default function MonthlyReportDetail({
         bgcolor: 'background.paper',
         color: 'text.primary',
         fontWeight: 'bold',
-        fontSize: '1.25rem',
+        fontSize: (isMobile && isLandscape) ? '1rem' : '1.25rem',
         borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        py: 2,
+        py: (isMobile && isLandscape) ? 1 : 2,
         px: 3,
         display: 'flex',
         justifyContent: 'space-between',
@@ -546,26 +556,33 @@ export default function MonthlyReportDetail({
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ 
+          <Typography variant={(isMobile && isLandscape) ? "subtitle1" : "h6"} component="div" sx={{ 
             fontWeight: 'bold', 
             overflow: 'hidden', 
             textOverflow: 'ellipsis', 
             whiteSpace: 'nowrap',
-            mr: (isMobile && isLandscape) ? 1 : 0
+            fontSize: 'inherit',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
           }}>
             {month} 상세 보고
+            {(isMobile && isLandscape) && (
+              <span style={{ fontSize: '0.9em', fontWeight: 'normal', color: 'text.secondary' }}>
+                (총 {filteredDetails.length}명)
+              </span>
+            )}
           </Typography>
 
           {isMobile && isLandscape && (
-             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', overflow: 'auto', ml: 1 }}>
-               {filterControls(true)}
-               <Typography variant="body2" sx={{ whiteSpace: 'nowrap', fontWeight: 'bold' }}>
-                 총 {filteredDetails.length}명
-                 {(groupFilter !== '전체' || divisionFilter !== '전체') &&
-                    ` / ${details.length}`}
-               </Typography>
-             </Box>
-           )}
+            <IconButton
+              onClick={handleFilterMenuClick}
+              size="small"
+              sx={{ ml: 1 }}
+            >
+              <FilterListIcon />
+            </IconButton>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -633,6 +650,53 @@ export default function MonthlyReportDetail({
           <ReportProblemIcon sx={{ mr: 1 }} />
           미보고
         </MenuItem>
+      </Menu>
+
+      {/* 필터 메뉴 (가로모드용) */}
+      <Menu
+        anchorEl={filterMenuAnchor}
+        open={Boolean(filterMenuAnchor)}
+        onClose={handleFilterMenuClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            minWidth: 200,
+            p: 2
+          }
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>
+          필터 설정
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <FormControl size="small" fullWidth>
+            <InputLabel id="menu-group-label">집단</InputLabel>
+            <Select
+              labelId="menu-group-label"
+              value={groupFilter}
+              label="집단"
+              onChange={handleGroupFilterChange}
+            >
+              {availableGroups.map((group) => (
+                <MenuItem key={group} value={group}>{group}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" fullWidth>
+            <InputLabel id="menu-division-label">구분</InputLabel>
+            <Select
+              labelId="menu-division-label"
+              value={divisionFilter}
+              label="구분"
+              onChange={handleDivisionFilterChange}
+            >
+              {availableDivisions.map((div) => (
+                <MenuItem key={div} value={div}>{div}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
       </Menu>
       <DialogContent sx={{
         bgcolor: '#f8f9fa', // Lighter background
