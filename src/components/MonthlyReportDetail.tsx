@@ -513,6 +513,7 @@ export default function MonthlyReportDetail({
       onClose={onClose}
       maxWidth="lg"
       fullWidth
+      fullScreen={isMobile && isLandscape}
       PaperProps={{
         sx: {
           bgcolor: 'background.paper',
@@ -556,7 +557,7 @@ export default function MonthlyReportDetail({
           </Typography>
 
           {isMobile && isLandscape && (
-             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', overflow: 'auto' }}>
+             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', overflow: 'auto', ml: 1 }}>
                {filterControls(true)}
                <Typography variant="body2" sx={{ whiteSpace: 'nowrap', fontWeight: 'bold' }}>
                  총 {filteredDetails.length}명
@@ -798,6 +799,7 @@ export default function MonthlyReportDetail({
           </>
         )}
       </DialogContent>
+      {! (isMobile && isLandscape) && (
       <Box sx={{
         p: 2,
         display: 'flex',
@@ -825,6 +827,7 @@ export default function MonthlyReportDetail({
           닫기
         </Button>
       </Box>
+      )}
       {selectedName && (
         <YearlyReportCard
           name={selectedName}
