@@ -210,7 +210,7 @@ export async function generatePublisherCard(
                     // User reported that +2 was not moving (still sagging?). Remarks at +4 was good.
                     // Assuming user wants to move UP, and -1 meant "Up 1" in screen coords (Y-down).
                     // So we try +4 for everything to match the confirmed "good" remarks position.
-                    let yShift = 4; 
+                    let yShift = 2; 
 
                     // 비고란은 왼쪽 정렬, 나머지는 가운데 정렬
                     if (config.fieldName === 'remarks') {
