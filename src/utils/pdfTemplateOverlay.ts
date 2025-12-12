@@ -191,6 +191,23 @@ export async function generatePublisherCard(
                     if (config.fieldName === 'remarks') {
                         field.setAlignment(0); // Left
                         field.setFontSize(9); // 비고는 글자가 많을 수 있으므로 조금 작게
+                        
+                        // 비고란 위치 조정 (위로 올림)
+                        try {
+                            const widgets = field.acroField.getWidgets();
+                            widgets.forEach(widget => {
+                                const rect = widget.getRectangle();
+                                // Y 좌표를 4포인트(약 1.4mm) 위로 이동
+                                widget.setRectangle({
+                                    x: rect.x,
+                                    y: rect.y + 4,
+                                    width: rect.width,
+                                    height: rect.height
+                                });
+                            });
+                        } catch (e) {
+                            console.warn('Failed to adjust remarks field position:', e);
+                        }
                     } else {
                         field.setAlignment(1); // Center
                     }
