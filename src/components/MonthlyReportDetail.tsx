@@ -39,6 +39,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import { getMonthlyDetail, getUnreportedMembers, getYearlyReport } from '../services/clientService';
 import YearlyReportCard from './YearlyReportCard';
+import PDFCoordinateAdjuster from './PDFCoordinateAdjuster';
 import jsPDF from 'jspdf';
 import { applyPlugin } from 'jspdf-autotable';
 
@@ -97,14 +98,17 @@ export default function MonthlyReportDetail({
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
-  const [unreportedMembers, setUnreportedMembers] = useState<Array<{name: string, group: string}>>([]);
+  const [unreportedMembers, setUnreportedMembers] = useState<Array<{ name: string, group: string }>>([]);
   const [unreportedDialogOpen, setUnreportedDialogOpen] = useState(false);
   const [serviceYear, setServiceYear] = useState<string>(propServiceYear || '');
-  
+
   // 전도인카드 필터링을 위한 상태 변수
   const [publisherCardFilterOpen, setPublisherCardFilterOpen] = useState(false);
   const [selectedPublishers, setSelectedPublishers] = useState<string[]>([]);
   const [divisionCardFilter, setDivisionCardFilter] = useState<string[]>([]);
+
+  // PDF 좌표 조정 도구
+  const [coordinateAdjusterOpen, setCoordinateAdjusterOpen] = useState(false);
 
 
   useEffect(() => {
@@ -112,7 +116,7 @@ export default function MonthlyReportDetail({
       loadDetails();
     }
   }, [open, month, managerEmail]);
-  
+
   // propServiceYear가 변경될 때 serviceYear state 업데이트
   useEffect(() => {
     if (propServiceYear) {
@@ -132,7 +136,7 @@ export default function MonthlyReportDetail({
         }
       };
       window.addEventListener('popstate', handlePopState);
-      
+
       // 개별 전도인카드 출력 이벤트 리스너 추가
       const handleExportPublisherCardEvent = (event: Event) => {
         const customEvent = event as CustomEvent;
@@ -141,7 +145,7 @@ export default function MonthlyReportDetail({
         }
       };
       document.addEventListener('export-publisher-card', handleExportPublisherCardEvent);
-      
+
       return () => {
         window.removeEventListener('popstate', handlePopState);
         document.removeEventListener('export-publisher-card', handleExportPublisherCardEvent);
@@ -202,12 +206,12 @@ export default function MonthlyReportDetail({
   // 필터 적용 함수
   const applyFilters = (data: DetailRow[], group: string, division: string) => {
     let filtered = [...data];
-    
+
     // 집단 필터 적용
     if (group !== '전체') {
       filtered = filtered.filter(item => item.group === group);
     }
-    
+
     // 구분 필터 적용
     if (division !== '전체') {
       if (division === '전도인') {
@@ -223,7 +227,7 @@ export default function MonthlyReportDetail({
 
     // 이름순으로 정렬
     filtered.sort((a, b) => a.name.localeCompare(b.name));
-    
+
     setFilteredDetails(filtered);
   };
 
@@ -266,62 +270,62 @@ export default function MonthlyReportDetail({
       }
 
       setPdfProgress(20);
-      
+
       setPdfProgress(60);
-      
+
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       await loadAndApplyFont(pdf);
-      
+
       // 여백 설정 - 상하좌우 여백 적용 (하단 여백 축소)
       const leftMargin = 15;
       const rightMargin = 15;
       const pdfTopMargin = 20;
       const pdfBottomMargin = 10; // 하단 여백 축소 (페이지 번호 제거로 인해)
       const pageWidth = pdf.internal.pageSize.getWidth();
-      
+
       // 제목 추가 (텍스트로 직접 추가 - 전도인카드와 동일한 방식)
       const groupName = groupFilter === '전체' ? '춘천남부회중' : groupFilter;
       const title = `${groupName} ${month} 상세 보고`;
-      
+
       // 제목 스타일 설정
       pdf.setFont('Gowun Dodum');
       pdf.setFontSize(18);
       pdf.text(title, pageWidth / 2, pdfTopMargin, { align: 'center' });
-      
+
       // 제목 높이 계산 (이미지 대신 텍스트 높이 계산)
       const titleHeight = 10; // 텍스트 제목의 대략적인 높이
-      
+
       // 테이블 이미지 크기 계산
 
 
       let position = pdfTopMargin + titleHeight + 2; // 제목 아래 여백 조정 (한 줄 띄우기)
-      
+
       // 총계 계산
-       const totals = {
-         인원: filteredDetails.length,
-         연구합계: filteredDetails.reduce((sum, detail) => sum + (parseInt(String(detail.bibleStudies)) || 0), 0),
-         시간합계: filteredDetails.reduce((sum, detail) => sum + (parseInt(String(detail.hours)) || 0), 0),
-         RP인원합계: filteredDetails.filter(detail => detail.division === 'RP').length,
-         AP인원합계: filteredDetails.filter(detail => detail.division === 'AP').length,
-         봉종인원합계: filteredDetails.filter(detail => detail.position === '봉사의 종' || detail.position === '봉종').length,
-         장로인원합계: filteredDetails.filter(detail => detail.position === '장로').length,
-         직책인원합계: filteredDetails.filter(detail => detail.position && detail.position !== '전도인').length
-       };
-      
+      const totals = {
+        인원: filteredDetails.length,
+        연구합계: filteredDetails.reduce((sum, detail) => sum + (parseInt(String(detail.bibleStudies)) || 0), 0),
+        시간합계: filteredDetails.reduce((sum, detail) => sum + (parseInt(String(detail.hours)) || 0), 0),
+        RP인원합계: filteredDetails.filter(detail => detail.division === 'RP').length,
+        AP인원합계: filteredDetails.filter(detail => detail.division === 'AP').length,
+        봉종인원합계: filteredDetails.filter(detail => detail.position === '봉사의 종' || detail.position === '봉종').length,
+        장로인원합계: filteredDetails.filter(detail => detail.position === '장로').length,
+        직책인원합계: filteredDetails.filter(detail => detail.position && detail.position !== '전도인').length
+      };
+
       // 페이지 여백 설정
 
 
 
-      
+
       // 총계 행을 테이블에 추가 - 스타일 강화
       const totalRow = document.createElement('tr');
       const headerRow = element.querySelector('tr');
       const firstTd = element.querySelector('td');
       const tbody = element.querySelector('tbody');
-      
+
       // 기존 총계 행이 있는지 확인하고 제거
-      const existingTotalRow = Array.from(element.querySelectorAll('tbody tr')).find(row => 
+      const existingTotalRow = Array.from(element.querySelectorAll('tbody tr')).find(row =>
         row.firstElementChild && row.firstElementChild.textContent === '총계'
       );
       if (existingTotalRow && existingTotalRow.parentNode) {
@@ -333,7 +337,7 @@ export default function MonthlyReportDetail({
         totalRow.style.fontWeight = 'bold';
         totalRow.style.borderTop = '2px solid #1976d2';
       }
-      
+
       // 총계 행 데이터 설정
       const totalCells = [
         { text: '총계', align: 'center' },
@@ -345,7 +349,7 @@ export default function MonthlyReportDetail({
         { text: `장로 ${totals.장로인원합계}`, align: 'center' },
         { text: `봉종 ${totals.봉종인원합계}`, align: 'center' }
       ];
-      
+
       if (tbody && firstTd) {
         totalCells.forEach(cell => {
           const td = document.createElement('td');
@@ -360,7 +364,7 @@ export default function MonthlyReportDetail({
         });
         tbody.appendChild(totalRow);
       }
-      
+
       // Use jspdf-autotable for table generation
       const tableHeaders = Array.from(element.querySelectorAll('th')).map(th => th.innerText);
       const tableRows = Array.from(element.querySelectorAll('tbody tr')).map(tr =>
@@ -369,7 +373,7 @@ export default function MonthlyReportDetail({
 
       // 테이블 너비 계산 (페이지 너비에서 여백 제외)
       const tableWidth = pageWidth - leftMargin - rightMargin;
-      
+
       // 각 열의 상대적 너비 비율 설정 (헤더 개수에 맞게 조정)
       const columnWidths = tableHeaders.map((header) => {
         // 비고 열은 2배로 늘리고, 나머지는 균등하게 분배
@@ -379,7 +383,7 @@ export default function MonthlyReportDetail({
         // 나머지 열은 균등하게 분배 (비고 열 제외한 나머지 공간을 균등하게)
         return (1 - 0.3) / (tableHeaders.length - 1);
       });
-      
+
       // 열 스타일 설정 (명시적 너비 지정)
       const columnStyles: any = {};
       for (let i = 0; i < tableHeaders.length; i++) {
@@ -388,7 +392,7 @@ export default function MonthlyReportDetail({
           halign: 'center' // 모든 열을 가운데 정렬
         };
       }
-      
+
       try {
         (pdf as any).autoTable({
           head: [tableHeaders],
@@ -430,17 +434,17 @@ export default function MonthlyReportDetail({
         console.error('테이블 생성 오류:', error);
         throw new Error('테이블 생성 중 오류가 발생했습니다: ' + (error instanceof Error ? error.message : String(error)));
       }
-      
+
       setPdfProgress(90);
-      
+
       pdf.save(`${month}_상세보고.pdf`);
       setPdfProgress(100);
-      
+
       // 성공 메시지
       setTimeout(() => {
         alert('PDF가 성공적으로 생성되었습니다.');
       }, 500);
-      
+
     } catch (error) {
       console.error('PDF 생성 오류:', error);
       let errorMessage = 'PDF 생성 중 오류가 발생했습니다.';
@@ -463,7 +467,7 @@ export default function MonthlyReportDetail({
     setPublisherCardFilterOpen(true);
     handleMenuClose();
   };
-  
+
   // 전도인카드 필터링 적용
   const handleApplyPublisherCardFilter = async () => {
     setPdfLoading(true);
@@ -474,48 +478,48 @@ export default function MonthlyReportDetail({
       const pdf = new jsPDF('l', 'mm', 'a4'); // 가로 모드
       await loadAndApplyFont(pdf);
       let isFirstPage = true;
-      
+
       // 선택된 전도인과 구분으로 필터링
       const filteredMembers = filteredDetails.filter(member => {
         // 이름으로 필터링
         if (!selectedPublishers.includes(member.name)) return false;
-        
+
         // 구분으로 필터링
         if (divisionCardFilter.length > 0) {
           if (member.division === 'RP' && !divisionCardFilter.includes('정규')) return false;
           if (member.division === 'AP' && !divisionCardFilter.includes('보조')) return false;
           if ((!member.division || member.division === 'P') && !divisionCardFilter.includes('전도인')) return false;
         }
-        
+
         return true;
       });
-      
+
       const totalMembers = filteredMembers.length;
-      
+
       for (let i = 0; i < totalMembers; i++) {
         const member = filteredMembers[i];
         setPdfProgress((i / totalMembers) * 80);
-        
+
         if (!isFirstPage) {
           pdf.addPage();
         }
         isFirstPage = false;
-        
+
         // 연간 보고 데이터 가져오기
         const yearlyData = await getYearlyReport(member.name, managerEmail);
-        
+
         // 전도인카드 생성
-      await generatePublisherCard(pdf, yearlyData, serviceYear);
+        await generatePublisherCard(pdf, yearlyData, serviceYear);
       }
-      
+
       setPdfProgress(90);
       pdf.save(`${month}_전도인카드_선택됨.pdf`);
       setPdfProgress(100);
-      
+
       setTimeout(() => {
         alert(`${totalMembers}명의 전도인카드가 성공적으로 생성되었습니다.`);
       }, 500);
-      
+
     } catch (error) {
       console.error('전도인카드 PDF 생성 오류:', error);
       alert('전도인카드 PDF 생성 중 오류가 발생했습니다.');
@@ -524,12 +528,12 @@ export default function MonthlyReportDetail({
       setPdfProgress(0);
     }
   };
-  
+
   // 전도인카드 PDF 출력 함수 - 필터 다이얼로그 열기로 변경
   const handleExportPublisherCardsToPDF = () => {
     handleOpenPublisherCardFilter();
   };
-  
+
   // 선택된 전도인 카드만 출력하는 함수
   const handleExportSelectedPublisherCardToPDF = async (name: string) => {
     setPdfLoading(true);
@@ -538,29 +542,29 @@ export default function MonthlyReportDetail({
     try {
       const pdf = new jsPDF('l', 'mm', 'a4'); // 가로 모드
       await loadAndApplyFont(pdf);
-      
+
       setPdfProgress(20);
-      
+
       // 연간 보고 데이터 가져오기
       const yearlyData = await getYearlyReport(name, managerEmail);
-      
 
-      
 
-      
+
+
+
       setPdfProgress(60);
-      
+
       // 전도인카드 생성
       await generatePublisherCard(pdf, yearlyData, serviceYear);
-      
+
       setPdfProgress(90);
       pdf.save(`전도인카드_${name}_${month}.pdf`);
       setPdfProgress(100);
-      
+
       setTimeout(() => {
         alert(`${name}님의 전도인카드가 성공적으로 생성되었습니다.`);
       }, 500);
-      
+
     } catch (error) {
       console.error('전도인카드 PDF 생성 오류:', error);
       alert('전도인카드 PDF 생성 중 오류가 발생했습니다.');
@@ -613,7 +617,7 @@ export default function MonthlyReportDetail({
 
     // 개인정보와 테이블 사이 여백 조정 - 간격 더 줄임
     yPos = topMargin + titleHeight + infoHeight - 5;
-    
+
     // 월별 기록 테이블을 이미지로 생성 - 크기 조정
     const months = ['9월', '10월', '11월', '12월', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '총계'];
     const monthlyRecords = yearlyData.monthlyRecords || [];
@@ -675,7 +679,7 @@ export default function MonthlyReportDetail({
     const tableWidth = pageWidth - (margin * 2);
     // 각 열의 상대적 너비 비율 설정 - 가독성 향상을 위해 조정
     const columnWidths = [0.12, 0.08, 0.12, 0.15, 0.12, 0.41]; // 비율 합은 1.0이어야 함
-    
+
     // 열 스타일 설정 (명시적 너비 지정)
     const columnStyles: any = {};
     for (let i = 0; i < tableHeaders.length; i++) {
@@ -684,7 +688,7 @@ export default function MonthlyReportDetail({
         halign: i === 0 ? 'left' : 'center' // 첫 번째 열은 왼쪽 정렬, 나머지는 가운데 정렬
       };
     }
-    
+
     try {
       (pdf as any).autoTable({
         head: [tableHeaders],
@@ -734,27 +738,27 @@ export default function MonthlyReportDetail({
       // 한글 폰트 로딩 시도
       try {
         // 폰트 파일 직접 로드 (상대 경로 사용)
-        const fontResponse = await fetch('/Ministry/GowunDodum-Regular.ttf');
+        const fontResponse = await fetch(`${import.meta.env.BASE_URL}GowunDodum-Regular.ttf`);
         if (!fontResponse.ok) {
           throw new Error(`Font fetch failed with status: ${fontResponse.status}`);
         }
-        
+
         // 폰트 파일을 ArrayBuffer로 변환
         const fontBuffer = await fontResponse.arrayBuffer();
-        
+
         // 작은 청크로 나누어 Base64 인코딩 (Maximum call stack size exceeded 오류 방지)
         const CHUNK_SIZE = 1024;
         let binary = '';
         const bytes = new Uint8Array(fontBuffer);
         const len = bytes.byteLength;
-        
+
         for (let i = 0; i < len; i += CHUNK_SIZE) {
           const chunk = bytes.slice(i, Math.min(i + CHUNK_SIZE, len));
           binary += String.fromCharCode.apply(null, Array.from(chunk));
         }
-        
+
         const fontBase64 = btoa(binary);
-        
+
         // 폰트를 PDF의 VFS에 추가하고 등록
         pdf.addFileToVFS('GowunDodum-Regular.ttf', fontBase64);
         pdf.addFont('GowunDodum-Regular.ttf', 'Gowun Dodum', 'normal');
@@ -801,8 +805,8 @@ export default function MonthlyReportDetail({
         }
       }}
     >
-      <DialogTitle sx={{ 
-        bgcolor: '#e3f2fd', 
+      <DialogTitle sx={{
+        bgcolor: '#e3f2fd',
         color: 'black',
         fontWeight: 'bold',
         fontSize: '1.5rem',
@@ -810,10 +814,10 @@ export default function MonthlyReportDetail({
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <IconButton 
+            <IconButton
               onClick={handleMenuClick}
-              size="small" 
-              sx={{ 
+              size="small"
+              sx={{
                 color: 'primary.main',
                 bgcolor: 'white',
                 '&:hover': { bgcolor: 'grey.100' }
@@ -827,7 +831,7 @@ export default function MonthlyReportDetail({
             <CloseIcon />
           </IconButton>
         </div>
-        
+
         {/* PDF 로딩 상태 */}
         {pdfLoading && (
           <Box sx={{ mt: 2 }}>
@@ -838,7 +842,7 @@ export default function MonthlyReportDetail({
           </Box>
         )}
       </DialogTitle>
-      
+
       {/* 메뉴 */}
       <Menu
         anchorEl={menuAnchor}
@@ -864,21 +868,21 @@ export default function MonthlyReportDetail({
           미보고
         </MenuItem>
       </Menu>
-      <DialogContent sx={{ 
+      <DialogContent sx={{
         bgcolor: 'background.paper',
         color: 'text.primary',
         p: 3
       }}>
         {loading ? (
-          <Box sx={{ 
-            display: 'flex', 
+          <Box sx={{
+            display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center', 
+            alignItems: 'center',
             justifyContent: 'center',
             minHeight: '200px'
           }}>
             <div className="loading-spinner" />
-            <Typography sx={{ 
+            <Typography sx={{
               color: 'text.primary',
               mt: 2,
               animation: 'pulse 1.5s infinite'
@@ -913,18 +917,18 @@ export default function MonthlyReportDetail({
           </>
         ) : (
           <>
-            <Box sx={{ 
-              display: 'flex', 
-              gap: 2, 
-              mb: 3, 
-              alignItems: 'center', 
+            <Box sx={{
+              display: 'flex',
+              gap: 2,
+              mb: 3,
+              alignItems: 'center',
               flexWrap: 'wrap',
               bgcolor: '#f5f5f5',
               p: 2,
               borderRadius: 2,
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}>
-              <FormControl size="small" sx={{ 
+              <FormControl size="small" sx={{
                 minWidth: 150,
                 '& .MuiOutlinedInput-root': {
                   bgcolor: 'white',
@@ -935,7 +939,7 @@ export default function MonthlyReportDetail({
                   }
                 }
               }}>
-                <InputLabel id="group-filter-label" sx={{ 
+                <InputLabel id="group-filter-label" sx={{
                   color: '#1976d2',
                   fontWeight: 'bold',
                   mb: 1
@@ -945,7 +949,7 @@ export default function MonthlyReportDetail({
                   value={groupFilter}
                   label="집단"
                   onChange={handleGroupFilterChange}
-                  sx={{ 
+                  sx={{
                     color: 'text.primary',
                     '&:hover': {
                       bgcolor: 'rgba(25, 118, 210, 0.04)'
@@ -953,7 +957,7 @@ export default function MonthlyReportDetail({
                   }}
                 >
                   {availableGroups.map((group) => (
-                    <MenuItem key={group} value={group} sx={{ 
+                    <MenuItem key={group} value={group} sx={{
                       color: 'text.primary',
                       '&:hover': {
                         bgcolor: 'rgba(25, 118, 210, 0.08)'
@@ -967,8 +971,8 @@ export default function MonthlyReportDetail({
                   ))}
                 </Select>
               </FormControl>
-              
-              <FormControl size="small" sx={{ 
+
+              <FormControl size="small" sx={{
                 minWidth: 150,
                 '& .MuiOutlinedInput-root': {
                   bgcolor: 'white',
@@ -979,7 +983,7 @@ export default function MonthlyReportDetail({
                   }
                 }
               }}>
-                <InputLabel id="division-filter-label" sx={{ 
+                <InputLabel id="division-filter-label" sx={{
                   color: '#1976d2',
                   fontWeight: 'bold',
                   mb: 1
@@ -989,7 +993,7 @@ export default function MonthlyReportDetail({
                   value={divisionFilter}
                   label="구분"
                   onChange={handleDivisionFilterChange}
-                  sx={{ 
+                  sx={{
                     color: 'text.primary',
                     '&:hover': {
                       bgcolor: 'rgba(25, 118, 210, 0.04)'
@@ -997,7 +1001,7 @@ export default function MonthlyReportDetail({
                   }}
                 >
                   {availableDivisions.map((division) => (
-                    <MenuItem key={division} value={division} sx={{ 
+                    <MenuItem key={division} value={division} sx={{
                       color: 'text.primary',
                       '&:hover': {
                         bgcolor: 'rgba(25, 118, 210, 0.08)'
@@ -1011,10 +1015,10 @@ export default function MonthlyReportDetail({
                   ))}
                 </Select>
               </FormControl>
-              
+
               {(groupFilter !== '전체' || divisionFilter !== '전체') && (
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => {
                     setGroupFilter('전체');
                     setDivisionFilter('전체');
@@ -1025,17 +1029,17 @@ export default function MonthlyReportDetail({
                   <CloseIcon fontSize="small" />
                 </IconButton>
               )}
-              
+
               <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
                 총 {filteredDetails.length}개 항목 표시 중
-                {(groupFilter !== '전체' || divisionFilter !== '전체') && 
+                {(groupFilter !== '전체' || divisionFilter !== '전체') &&
                   ` (전체 ${details.length}개 중)`}
               </Typography>
             </Box>
-            <TableContainer 
+            <TableContainer
               id="monthly-detail-table"
-              component={Paper} 
-              sx={{ 
+              component={Paper}
+              sx={{
                 bgcolor: 'background.paper',
                 borderRadius: 2,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -1047,15 +1051,15 @@ export default function MonthlyReportDetail({
                 }
               }}
             >
-              <Table 
-                size="small" 
-                sx={{ 
-                  '& .MuiTableCell-root': { 
+              <Table
+                size="small"
+                sx={{
+                  '& .MuiTableCell-root': {
                     borderColor: 'rgba(224, 224, 224, 0.3)',
                     py: 1.5,
                     px: 2
-                  }, 
-                  '& .MuiTableRow-root': { 
+                  },
+                  '& .MuiTableRow-root': {
                     transition: 'background-color 0.2s ease'
                   }
                 }}
@@ -1074,13 +1078,13 @@ export default function MonthlyReportDetail({
                 </TableHead>
                 <TableBody>
                   {filteredDetails.map((row, index) => (
-                    <TableRow 
-                      key={index} 
-                      sx={{ 
-                        '&:nth-of-type(odd)': { 
+                    <TableRow
+                      key={index}
+                      sx={{
+                        '&:nth-of-type(odd)': {
                           bgcolor: 'rgba(25, 118, 210, 0.04)'
                         },
-                        '&:hover': { 
+                        '&:hover': {
                           bgcolor: 'rgba(25, 118, 210, 0.08)',
                           '& .MuiTableCell-root': {
                             color: '#1976d2'
@@ -1088,67 +1092,67 @@ export default function MonthlyReportDetail({
                         }
                       }}
                     >
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>
-                      <Link
-                        component="button"
-                        onClick={() => {
-                          setSelectedName(row.name);
-                          setYearlyReportOpen(true);
-                        }}
-                        sx={{ 
-                          cursor: 'pointer',
-                          textDecoration: 'none',
-                          '&:hover': {
-                            textDecoration: 'underline'
-                          }
-                        }}
-                      >
-                        {row.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.participated ? 'Y' : 'N'}</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.bibleStudies && row.bibleStudies !== 0 ? row.bibleStudies : ''}</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.hours && row.hours !== 0 ? row.hours : ''}</TableCell>
-                    <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{Array.isArray(row.remarks) ? row.remarks.join('\n') : (row.remarks !== null && row.remarks !== undefined) ? row.remarks : ''}</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>
-                      {row.division || ''}
-                    </TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.2)', color: 'text.primary' }}>{row.position || ''}</TableCell>
-                    <TableCell align="center" sx={{ color: 'text.primary' }}>{row.group || ''}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>
+                        <Link
+                          component="button"
+                          onClick={() => {
+                            setSelectedName(row.name);
+                            setYearlyReportOpen(true);
+                          }}
+                          sx={{
+                            cursor: 'pointer',
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline'
+                            }
+                          }}
+                        >
+                          {row.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.participated ? 'Y' : 'N'}</TableCell>
+                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.bibleStudies && row.bibleStudies !== 0 ? row.bibleStudies : ''}</TableCell>
+                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.hours && row.hours !== 0 ? row.hours : ''}</TableCell>
+                      <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{Array.isArray(row.remarks) ? row.remarks.join('\n') : (row.remarks !== null && row.remarks !== undefined) ? row.remarks : ''}</TableCell>
+                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>
+                        {row.division || ''}
+                      </TableCell>
+                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.2)', color: 'text.primary' }}>{row.position || ''}</TableCell>
+                      <TableCell align="center" sx={{ color: 'text.primary' }}>{row.group || ''}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </>
         )}
       </DialogContent>
-      <Box sx={{ 
-        p: 2, 
-        display: 'flex', 
+      <Box sx={{
+        p: 2,
+        display: 'flex',
         justifyContent: 'flex-end',
         borderTop: '1px solid rgba(0, 0, 0, 0.12)',
         bgcolor: '#f5f5f5'
       }}>
-              <Button
-                onClick={onClose}
-                variant="contained"
-                sx={{
-                  bgcolor: '#e0e0e0',
-                  color: 'black',
-                  fontWeight: 'bold',
-                  px: 4,
-                  py: 1,
-                  borderRadius: 2,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                  '&:hover': {
-                    bgcolor: '#757575',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
-                  }
-                }}
-              >
-                닫기
-              </Button>
+        <Button
+          onClick={onClose}
+          variant="contained"
+          sx={{
+            bgcolor: '#e0e0e0',
+            color: 'black',
+            fontWeight: 'bold',
+            px: 4,
+            py: 1,
+            borderRadius: 2,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            '&:hover': {
+              bgcolor: '#757575',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+            }
+          }}
+        >
+          닫기
+        </Button>
       </Box>
       {selectedName && (
         <YearlyReportCard
@@ -1158,10 +1162,10 @@ export default function MonthlyReportDetail({
           onClose={() => setYearlyReportOpen(false)}
         />
       )}
-      
+
       {/* 미보고자 다이얼로그 */}
-      <Dialog 
-        open={unreportedDialogOpen} 
+      <Dialog
+        open={unreportedDialogOpen}
         onClose={() => setUnreportedDialogOpen(false)}
         maxWidth="sm"
         fullWidth
@@ -1169,9 +1173,9 @@ export default function MonthlyReportDetail({
         <DialogTitle sx={{ bgcolor: '#ffebee', color: 'error.main' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             미보고자 목록 ({month})
-            <IconButton 
-              onClick={() => setUnreportedDialogOpen(false)} 
-              size="small" 
+            <IconButton
+              onClick={() => setUnreportedDialogOpen(false)}
+              size="small"
               sx={{ color: 'grey.500' }}
             >
               <CloseIcon />
@@ -1202,7 +1206,7 @@ export default function MonthlyReportDetail({
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* 전도인카드 필터 다이얼로그 */}
       <Dialog
         open={publisherCardFilterOpen}
@@ -1243,7 +1247,7 @@ export default function MonthlyReportDetail({
               />
             ))}
           </Box>
-          
+
           <Typography variant="subtitle1" sx={{ mb: 2, mt: 2, fontWeight: 'bold' }}>
             전도인 선택 ({selectedPublishers.length}명 선택됨)
           </Typography>
@@ -1264,7 +1268,7 @@ export default function MonthlyReportDetail({
               모두 해제
             </Button>
           </Box>
-          
+
           <Box sx={{ maxHeight: '300px', overflow: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
             <List dense>
               {filteredDetails.map((member) => (
@@ -1285,9 +1289,9 @@ export default function MonthlyReportDetail({
                       tabIndex={-1}
                       disableRipple
                     />
-                    <ListItemText 
-                      primary={member.name} 
-                      secondary={`${member.group || ''} ${member.division || '전도인'}`} 
+                    <ListItemText
+                      primary={member.name}
+                      secondary={`${member.group || ''} ${member.division || '전도인'}`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -1299,9 +1303,9 @@ export default function MonthlyReportDetail({
           <Button onClick={() => setPublisherCardFilterOpen(false)} color="inherit">
             취소
           </Button>
-          <Button 
-            onClick={handleApplyPublisherCardFilter} 
-            variant="contained" 
+          <Button
+            onClick={handleApplyPublisherCardFilter}
+            variant="contained"
             color="primary"
             disabled={selectedPublishers.length === 0}
           >

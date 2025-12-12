@@ -5,6 +5,7 @@ import './App.css'
 import MinistryReportForm from './components/MinistryReportForm';
 import ManagerDashboard from './components/ManagerDashboard';
 import ManagerLogin from './components/ManagerLogin';
+import PDFCoordinateTest from './components/PDFCoordinateTest';
 
 // Google OAuth 클라이언트 ID
 const GOOGLE_CLIENT_ID = '497507205467-hic2647a8dbe9im2n68ljcftc5pf3pkv.apps.googleusercontent.com';
@@ -13,15 +14,15 @@ const GOOGLE_CLIENT_ID = '497507205467-hic2647a8dbe9im2n68ljcftc5pf3pkv.apps.goo
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const managerEmail = localStorage.getItem('managerEmail');
-  
+
   if (!managerEmail && location.pathname === '/dashboard') {
     return <Navigate to="/manager" replace />;
   }
-  
+
   if (managerEmail && location.pathname === '/manager') {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return <>{children}</>;
 }
 
@@ -49,12 +50,13 @@ function App() {
       <Router basename="/Ministry">
         <AuthGuard>
           <Routes>
-          <Route path="/manager" element={<ManagerLogin onLogin={handleLogin} />} />
-          <Route 
-            path="/dashboard" 
-            element={<ManagerDashboard email={managerEmail || ''} onLogout={handleLogout} />}
-          />
-          <Route path="/" element={<MinistryReportForm />} />
+            <Route path="/manager" element={<ManagerLogin onLogin={handleLogin} />} />
+            <Route
+              path="/dashboard"
+              element={<ManagerDashboard email={managerEmail || ''} onLogout={handleLogout} />}
+            />
+            <Route path="/pdf-test" element={<PDFCoordinateTest />} />
+            <Route path="/" element={<MinistryReportForm />} />
           </Routes>
         </AuthGuard>
       </Router>

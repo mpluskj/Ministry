@@ -1,0 +1,167 @@
+{
+  "name": {
+    "x": 80,
+    "y": 765,
+    "label": "성명",
+    "type": "text",
+    "fieldName": "name",
+    "width": 150,
+    "height": 15,
+    "textSize": 10
+  },
+  "birthDate": {
+    "x": 80,
+    "y": 748,
+    "label": "생년월일",
+    "type": "text",
+    "fieldName": "birthDate",
+    "width": 100,
+    "height": 15,
+    "textSize": 10
+  },
+  "baptismDate": {
+    "x": 80,
+    "y": 732,
+    "label": "침례일자",
+    "type": "text",
+    "fieldName": "baptismDate",
+    "width": 100,
+    "height": 15,
+    "textSize": 10
+  },
+  "maleCheckbox": {
+    "x": 386,
+    "y": 747,
+    "label": "남 체크박스",
+    "type": "checkbox",
+    "fieldName": "male",
+    "width": 10,
+    "height": 10
+  },
+  "femaleCheckbox": {
+    "x": 487,
+    "y": 747,
+    "label": "여 체크박스",
+    "type": "checkbox",
+    "fieldName": "female",
+    "width": 10,
+    "height": 10
+  },
+  "hopeCheckbox": {
+    "x": 386,
+    "y": 731,
+    "label": "다른 양 체크박스",
+    "type": "checkbox",
+    "fieldName": "hope",
+    "width": 10,
+    "height": 10
+  },
+  "anointedCheckbox": {
+    "x": 487,
+    "y": 731,
+    "label": "기름부음받은 자 체크박스",
+    "type": "checkbox",
+    "fieldName": "anointed",
+    "width": 10,
+    "height": 10
+  },
+  "elderCheckbox": {
+    "x": 19,
+    "y": 714,
+    "label": "장로 체크박스",
+    "type": "checkbox",
+    "fieldName": "elder",
+    "width": 10,
+    "height": 10
+  },
+  "msCheckbox": {
+    "x": 93,
+    "y": 714,
+    "label": "봉사의 종 체크박스",
+    "type": "checkbox",
+    "fieldName": "ms",
+    "width": 10,
+    "height": 10
+  },
+  "rpCheckbox": {
+    "x": 189,
+    "y": 714,
+    "label": "정규 파이오니아 체크박스",
+    "type": "checkbox",
+    "fieldName": "rp",
+    "width": 10,
+    "height": 10
+  },
+  "spCheckbox": {
+    "x": 313,
+    "y": 714,
+    "label": "특별 파이오니아 체크박스",
+    "type": "checkbox",
+    "fieldName": "sp",
+    "width": 10,
+    "height": 10
+  },
+  "missionaryCheckbox": {
+    "x": 440,
+    "y": 714,
+    "label": "야외 선교인 체크박스",
+    "type": "checkbox",
+    "fieldName": "missionary",
+    "width": 10,
+    "height": 10
+  },
+  "tableStartY": {
+    "x": 40,
+    "y": 600,
+    "label": "테이블 시작 Y"
+  },
+  "tableParticipatedX": {
+    "x": 134,
+    "y": 628,
+    "label": "참여 X (Y는 테이블 시작 Y 기준)",
+    "type": "checkbox",
+    "fieldName": "participated",
+    "width": 10,
+    "height": 10
+  },
+  "tableStudiesX": {
+    "x": 207,
+    "y": 627,
+    "label": "연구 X (Y는 테이블 시작 Y 기준)",
+    "type": "text",
+    "fieldName": "studies",
+    "width": 30,
+    "height": 16.5,
+    "textSize": 10
+  },
+  "tableAPX": {
+    "x": 275,
+    "y": 648,
+    "label": "보조 X (Y는 테이블 시작 Y 기준)",
+    "type": "checkbox",
+    "fieldName": "ap",
+    "width": 10,
+    "height": 10
+  },
+  "tableHoursX": {
+    "x": 346,
+    "y": 627,
+    "label": "시간 X (Y는 테이블 시작 Y 기준)",
+    "type": "text",
+    "fieldName": "hours",
+    "width": 40,
+    "height": 16.5,
+    "textSize": 10
+  },
+  "tableRemarksX": {
+    "x": 417,
+    "y": 627,
+    "label": "비고 X (Y는 테이블 시작 Y 기준)",
+    "type": "text",
+    "fieldName": "remarks",
+    "width": 200,
+    "height": 16.5,
+    "textSize": 8,
+    "multiline": true
+  }
+}

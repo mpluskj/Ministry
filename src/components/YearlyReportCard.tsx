@@ -14,11 +14,13 @@ import {
   Typography,
   Box,
   Button,
+  CircularProgress,
 } from '@mui/material';
 
 import './YearlyReportCard.css';
 import CloseIcon from '@mui/icons-material/Close';
 import { getYearlyReport, getServiceYears } from '../services/clientService';
+import { generatePublisherCard } from '../utils/pdfTemplateOverlay';
 
 interface YearlyReportCardProps {
   name: string;
@@ -64,8 +66,31 @@ export default function YearlyReportCard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [serviceYear, setServiceYear] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const MONTHS = ['9월', '10월', '11월', '12월', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'];
+  
+  const handleGeneratePdf = async () => {
+    if (!reportData) return;
+    setIsGenerating(true);
+    try {
+      const pdfBytes = await generatePublisherCard(reportData, serviceYear);
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `전도인카드_${name}_${serviceYear}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF 생성 실패:", err);
+      setError(err instanceof Error ? err.message : 'PDF를 생성하는 중 오류가 발생했습니다.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -287,15 +312,10 @@ export default function YearlyReportCard({
               mt: 3 
             }}>
               <Button
-                onClick={() => {
-                  // 전도인카드 출력 함수 호출
-                  const event = new CustomEvent('export-publisher-card', {
-                    detail: { name }
-                  });
-                  document.dispatchEvent(event);
-                }}
+                onClick={handleGeneratePdf}
                 variant="contained"
                 color="primary"
+                disabled={isGenerating}
                 sx={{
                   fontWeight: 'bold',
                   px: 4,
@@ -304,10 +324,25 @@ export default function YearlyReportCard({
                   boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                   '&:hover': {
                     boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
-                  }
+                  },
+                  position: 'relative',
                 }}
               >
-                전도인카드 출력
+                {isGenerating ? (
+                  <>
+                    <CircularProgress size={24} sx={{
+                       color: 'primary.light',
+                       position: 'absolute',
+                       top: '50%',
+                       left: '50%',
+                       marginTop: '-12px',
+                       marginLeft: '-12px',
+                    }}/>
+                    생성 중...
+                  </>
+                ) : (
+                  '전도인카드 출력'
+                )}
               </Button>
               <Button
                 onClick={onClose}
