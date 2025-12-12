@@ -187,6 +187,10 @@ export async function generatePublisherCard(
                     case 'remarks':
                         fieldName = `${month} 비고`;
                         value = record.remarks ?? '';
+                        // 줄바꿈 문자를 두 칸 공백으로 치환
+                        if (typeof value === 'string') {
+                            value = value.replace(/\n/g, '  ');
+                        }
                         break;
                 }
                 if (isCheckbox) {
@@ -203,13 +207,13 @@ export async function generatePublisherCard(
                     // 폰트 크기 및 정렬 설정
                     let fontSize = 11;
                     let alignment = 1; // Center
-                    let yShift = 3; // 기본적으로 모든 텍스트 필드를 3포인트 상향 조정 (성서 연구, 시간 등)
+                    let yShift = 2; // 기본적으로 모든 텍스트 필드를 2포인트 상향 조정 (기존 3에서 -1)
 
                     // 비고란은 왼쪽 정렬, 나머지는 가운데 정렬
                     if (config.fieldName === 'remarks') {
                         alignment = 0; // Left
                         fontSize = 9; // 비고는 글자가 많을 수 있으므로 조금 작게
-                        yShift = 4; // 비고란은 조금 더 상향 조정
+                        yShift = 3; // 비고란은 조금 더 상향 조정 (기존 4에서 -1)
                     }
 
                     field.setFontSize(fontSize);
@@ -249,7 +253,7 @@ export async function generatePublisherCard(
                 const rect = widget.getRectangle();
                 widget.setRectangle({
                     x: rect.x,
-                    y: rect.y + 3, // +3 point shift
+                    y: rect.y + 2, // +2 point shift (from +3 to -1)
                     width: rect.width,
                     height: rect.height
                 });
@@ -273,7 +277,7 @@ export async function generatePublisherCard(
                 const rect = widget.getRectangle();
                 widget.setRectangle({
                     x: rect.x,
-                    y: rect.y + 3, // +3 point shift
+                    y: rect.y + 2, // +2 point shift (from +3 to -1)
                     width: rect.width,
                     height: rect.height
                 });
