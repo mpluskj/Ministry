@@ -18,16 +18,7 @@ import {
   MenuItem,
   CircularProgress,
   Container,
-  Card,
-  CardContent,
-  Chip,
-  useTheme,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MonthlyReportDetail from './MonthlyReportDetail';
 import { getInitialDashboardData, toggleMonthStatus, changeServiceYear } from '../services/clientService';
 
@@ -50,7 +41,6 @@ interface ManagerDashboardProps {
 }
 
 export default function ManagerDashboard({ email, onLogout }: ManagerDashboardProps) {
-  const theme = useTheme();
   const [reports, setReports] = useState<Array<{
     month: string;
     status: string;
@@ -215,257 +205,201 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
 
   return (
     <Container maxWidth="xl" sx={{
-      py: 4,
+      py: 3,
       position: 'relative',
       minHeight: '100vh',
-      bgcolor: '#f4f6f8',
+      px: { xs: 1, sm: 2, md: 3 },
+      overflowX: 'auto'
     }}>
-      {/* Header Section */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', md: 'row' }, 
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'center', md: 'flex-start' },
-        mb: 4,
-        gap: 2
-      }}>
-        <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{
-              fontWeight: 800,
-              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 1,
-              letterSpacing: '-0.5px'
-            }}
-          >
-            {sheetTitle || 'Ministry Dashboard'}
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              color: 'text.secondary',
-              fontWeight: 500,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              justifyContent: { xs: 'center', md: 'flex-start' }
-            }}
-          >
-            <Chip 
-              label={groupName ? `${groupName} 봉사 집단` : '전체 회중'} 
-              size="small" 
-              color="primary" 
-              variant="outlined" 
-              sx={{ fontWeight: 'bold' }}
-            />
-            {managerName} {managerType === 'super' ? '총관리자' : '관리자'}님
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            startIcon={<RefreshIcon />}
-            onClick={loadData}
-            variant="outlined"
-            sx={{ borderRadius: 2 }}
-          >
-            새로고침
-          </Button>
-          <Button
-            startIcon={<LogoutIcon />}
-            onClick={onLogout}
-            variant="contained"
-            color="error"
-            sx={{ 
-              borderRadius: 2,
-              boxShadow: theme.shadows[2]
-            }}
-          >
-            로그아웃
-          </Button>
-        </Box>
+      {/* 제목 영역 */}
+      <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontWeight: 'bold',
+            color: 'primary.main',
+            mb: 1,
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
+        >
+          {sheetTitle}
+        </Typography>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            color: 'text.secondary',
+            fontWeight: 500
+          }}
+        >
+          {groupName ? `${groupName} 봉사 집단` : '전체 회중'} - {managerName} {managerType === 'super' ? '총관리자' : '관리자'}
+        </Typography>
       </Box>
 
-      {/* Main Content Card */}
-      <Card sx={{ 
-        borderRadius: 3, 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-        overflow: 'hidden',
-        bgcolor: 'background.paper'
+      <Box sx={{
+        overflowX: 'auto',
+        width: '100%',
+        '&::-webkit-scrollbar': {
+          height: '8px'
+        },
+        '&::-webkit-scrollbar-track': {
+          backgroundColor: '#f1f1f1',
+          borderRadius: '4px'
+        },
+        '&::-webkit-scrollbar-thumb': {
+          backgroundColor: '#c1c1c1',
+          borderRadius: '4px',
+          '&:hover': {
+            backgroundColor: '#a8a8a8'
+          }
+        }
       }}>
-        <CardContent sx={{ p: 0 }}>
-          <Box sx={{
-            overflowX: 'auto',
-            width: '100%',
-            '&::-webkit-scrollbar': {
-              height: '8px'
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: '#f1f1f1',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: '#c1c1c1',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: '#a8a8a8'
-              }
-            }
-          }}>
-            <TableContainer sx={{ minWidth: 800 }}>
-              <Table size="medium">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f8fafc' }}>
-                    <TableCell
-                      align="center"
-                      onClick={handleYearClick}
-                      sx={{
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        color: 'primary.main',
-                        borderBottom: '2px solid rgba(0,0,0,0.05)',
-                        whiteSpace: 'nowrap',
-                        py: 2,
-                        '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' }
-                      }}
+        <TableContainer
+          component={Paper}
+          sx={{
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            borderRadius: 2,
+            minWidth: '800px'
+          }}
+        >
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
+                <TableCell
+                  align="center"
+                  sx={{
+                    borderRight: '1px solid rgba(0, 0, 0, 0.3)',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    backgroundColor: '#bbdefb',
+                    '&:hover': { backgroundColor: '#90caf9' }
+                  }}
+                  onClick={handleYearClick}
+                >
+                  {serviceYear}
+                </TableCell>
+                <Menu
+                  anchorEl={yearMenuAnchor}
+                  open={Boolean(yearMenuAnchor)}
+                  onClose={handleYearClose}
+                >
+                  {serviceYears.map((yearOption) => (
+                    <MenuItem
+                      key={yearOption.year}
+                      onClick={() => handleYearSelect(yearOption.year, yearOption.spreadsheetId)}
+                      selected={yearOption.year === serviceYear}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                        {serviceYear}
-                        <KeyboardArrowDownIcon fontSize="small" />
-                      </Box>
-                    </TableCell>
-                    <Menu
-                      anchorEl={yearMenuAnchor}
-                      open={Boolean(yearMenuAnchor)}
-                      onClose={handleYearClose}
-                      PaperProps={{ sx: { borderRadius: 2, mt: 1, minWidth: 120 } }}
-                    >
-                      {serviceYears.map((yearOption) => (
-                        <MenuItem
-                          key={yearOption.year}
-                          onClick={() => handleYearSelect(yearOption.year, yearOption.spreadsheetId)}
-                          selected={yearOption.year === serviceYear}
-                          sx={{ fontWeight: yearOption.year === serviceYear ? 'bold' : 'normal' }}
-                        >
-                          {yearOption.year}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                    
-                    {[
-                      '보고자 수', '전도인 수', '전도인 연구', 
-                      '보조 수', '보조 시간', '보조 연구', 
-                      '정규 수', '정규 시간', '정규 연구', '관리'
-                    ].map((header) => (
-                      <TableCell 
-                        key={header} 
-                        align="center" 
-                        sx={{ 
-                          fontWeight: 700, 
-                          color: 'text.secondary',
-                          borderBottom: '2px solid rgba(0,0,0,0.05)',
-                          whiteSpace: 'nowrap',
-                          py: 2
+                      {yearOption.year}
+                    </MenuItem>
+                  ))}
+                </Menu>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>보고자 수</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>전도인 수</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>전도인 연구</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>보조 수</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>보조 시간</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>보조 연구</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>정규 수</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>정규 시간</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>정규 연구</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>관리</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Array.isArray(reports) && reports.map((report) => (
+                <TableRow
+                  key={report.month}
+                  sx={{
+                    '&:nth-of-type(odd)': { backgroundColor: '#fafafa' },
+                    '&:hover': { backgroundColor: '#f0f8ff' },
+                    transition: 'background-color 0.2s ease'
+                  }}
+                >
+                  <TableCell
+                    align="center"
+                    sx={{
+                      borderRight: '1px solid rgba(0, 0, 0, 0.3)',
+                      fontWeight: 'bold',
+                      color: 'primary.main'
+                    }}
+                  >
+                    {report.month}
+                  </TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.totalReporters && report.stats.totalReporters !== 0 ? report.stats.totalReporters : ''}</TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.publisherCount && report.stats.publisherCount !== 0 ? report.stats.publisherCount : ''}</TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.publisherStudies && report.stats.publisherStudies !== 0 ? report.stats.publisherStudies : ''}</TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.apCount && report.stats.apCount !== 0 ? report.stats.apCount : ''}</TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.apHours && report.stats.apHours !== 0 ? report.stats.apHours : ''}</TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.apStudies && report.stats.apStudies !== 0 ? report.stats.apStudies : ''}</TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.rpCount && report.stats.rpCount !== 0 ? report.stats.rpCount : ''}</TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.rpHours && report.stats.rpHours !== 0 ? report.stats.rpHours : ''}</TableCell>
+                  <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)' }}>{report.stats.rpStudies && report.stats.rpStudies !== 0 ? report.stats.rpStudies : ''}</TableCell>
+                  <TableCell align="center">
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          setSelectedMonth(report.month);
+                          setDetailOpen(true);
                         }}
                       >
-                        {header}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {Array.isArray(reports) && reports.map((report) => (
-                    <TableRow
-                      key={report.month}
-                      hover
-                      sx={{
-                        '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.02) !important' },
-                        transition: 'background-color 0.2s ease'
-                      }}
-                    >
-                      <TableCell
-                        align="center"
-                        sx={{
-                          fontWeight: 600,
-                          color: 'primary.main',
-                          borderRight: '1px solid rgba(0,0,0,0.03)'
-                        }}
-                      >
-                        {report.month}
-                      </TableCell>
-                      
-                      {[
-                        report.stats.totalReporters,
-                        report.stats.publisherCount,
-                        report.stats.publisherStudies,
-                        report.stats.apCount,
-                        report.stats.apHours,
-                        report.stats.apStudies,
-                        report.stats.rpCount,
-                        report.stats.rpHours,
-                        report.stats.rpStudies
-                      ].map((value, idx) => (
-                        <TableCell 
-                          key={idx} 
-                          align="center"
-                          sx={{ 
-                            color: value ? 'text.primary' : 'text.disabled',
-                            borderRight: idx < 8 ? '1px solid rgba(0,0,0,0.03)' : 'none'
+                        상세
+                      </Button>
+                      {managerType === 'super' && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleToggleStatus(report.month, report.status)}
+                          sx={{
+                            bgcolor: report.status === 'COMPLETED' ? 'grey.500' : 'primary.main',
+                            '&:hover': {
+                              bgcolor: report.status === 'COMPLETED' ? 'grey.600' : 'primary.dark'
+                            }
                           }}
                         >
-                          {value && value !== 0 ? value.toLocaleString() : '-'}
-                        </TableCell>
-                      ))}
+                          {report.status === 'COMPLETED' ? '완료' : '입력'}
+                        </Button>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
 
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => {
-                              setSelectedMonth(report.month);
-                              setDetailOpen(true);
-                            }}
-                            sx={{ borderRadius: 1.5, minWidth: 60 }}
-                          >
-                            상세
-                          </Button>
-                          {managerType === 'super' && (
-                            <Tooltip title={report.status === 'COMPLETED' ? "입력 마감됨 (클릭하여 다시 열기)" : "입력 중 (클릭하여 마감하기)"}>
-                              <Chip
-                                label={report.status === 'COMPLETED' ? '완료' : '입력중'}
-                                color={report.status === 'COMPLETED' ? 'default' : 'success'}
-                                size="small"
-                                onClick={() => handleToggleStatus(report.month, report.status)}
-                                sx={{ 
-                                  cursor: 'pointer', 
-                                  fontWeight: 'bold', 
-                                  minWidth: 60,
-                                  '&:hover': { opacity: 0.9 }
-                                }}
-                              />
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {reports.length === 0 && !loading && (
-                    <TableRow>
-                      <TableCell colSpan={11} align="center" sx={{ py: 6 }}>
-                        <Typography color="text.secondary">데이터가 없습니다.</Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        </CardContent>
-      </Card>
+      {/* 로그아웃 버튼 - 테이블 아래 우측측 배치 */}
+
+      <Box sx={{
+        p: 2,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+        bgcolor: '#f5f5f5'
+      }}>
+        <Button
+          variant="contained"
+          color="inherit"
+          onClick={onLogout}
+          sx={{
+            bgcolor: 'grey.500',
+            '&:hover': {
+              bgcolor: 'grey.600',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+            },
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 'bold',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
+        >
+          로그아웃
+        </Button>
+      </Box>
 
       {selectedMonth && (
         <MonthlyReportDetail
