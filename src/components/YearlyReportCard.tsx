@@ -142,25 +142,26 @@ export default function YearlyReportCard({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="lg"
-      fullWidth
+      fullScreen
       PaperProps={{
         sx: {
           bgcolor: 'background.paper',
-          color: 'text.primary'
+          color: 'text.primary',
+          borderRadius: 0
         }
       }}
     >
       <DialogTitle sx={{ 
-        bgcolor: '#9e9e9e',
-        color: 'white',
+        bgcolor: '#ffffff',
+        color: '#1a237e',
         fontWeight: 'bold',
-        fontSize: '1.5rem',
-        textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+        fontSize: '1.3rem',
+        borderBottom: '1px solid #e0e0e0',
+        py: 2
       }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" sx={{ width: '100%', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>회중용 전도인 기록 카드</Typography>
-          <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}>
+          <Typography variant="h5" sx={{ width: '100%', textAlign: 'center', color: '#1a237e', fontWeight: 'bold' }}>회중용 전도인 기록 카드</Typography>
+          <IconButton onClick={onClose} size="small" sx={{ color: 'grey.500' }}>
             <CloseIcon />
           </IconButton>
         </Box>
@@ -226,19 +227,19 @@ export default function YearlyReportCard({
               <Table size="small" sx={{ 
                 '& .MuiTableCell-root': { 
                   borderColor: 'divider',
-                  padding: '8px',
+                  padding: '5px',
                   fontSize: '0.875rem',
                   border: '1px solid rgb(80, 80, 80)'
                 }
               }}>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: '#e0e0e0' }}>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>{serviceYear}</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>참여</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>성서연구</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>보조 파이오니아</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>시간</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '200px' }}>비고</TableCell>
+                  <TableRow sx={{ bgcolor: '#eeeeee', borderBottom: '2px solid #e0e0e0' }}>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', width: '80px' }}>{serviceYear}</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', width: '80px' }}>참여</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', width: '80px' }}>성서연구</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', width: '80px' }}>보조 파이오니아</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', width: '80px' }}>시간</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', width: '200px' }}>비고</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>

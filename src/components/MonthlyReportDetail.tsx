@@ -412,13 +412,12 @@ export default function MonthlyReportDetail({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="lg"
-      fullWidth
+      fullScreen
       PaperProps={{
         sx: {
           bgcolor: 'background.paper',
           color: 'text.primary',
-          borderRadius: 3
+          borderRadius: 0
         }
       }}
     >
@@ -426,7 +425,7 @@ export default function MonthlyReportDetail({
         bgcolor: '#ffffff',
         color: '#1a237e',
         fontWeight: 'bold',
-        fontSize: '1.5rem',
+        fontSize: '1.3rem',
         borderBottom: '1px solid #e0e0e0',
         py: 2
       }}>
@@ -562,15 +561,15 @@ export default function MonthlyReportDetail({
             <TableContainer component={Paper} sx={{ bgcolor: 'background.paper' }}>
               <Table size="small" sx={{ '& .MuiTableCell-root': { borderColor: 'rgba(224, 224, 224, 0.3)' }, '& .MuiTableRow-root': { transition: 'background-color 0.2s ease' } }}>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: '#fafafa', borderBottom: '2px solid #eeeeee' }}>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>이름</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>참여</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>연구</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>시간</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>비고</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>구분</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>직책</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold' }}>집단</TableCell>
+                  <TableRow sx={{ bgcolor: '#eeeeee', borderBottom: '2px solid #e0e0e0' }}>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>이름</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>참여</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>연구</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>시간</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>비고</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>구분</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>직책</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold' }}>집단</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -588,6 +587,7 @@ export default function MonthlyReportDetail({
                 bgcolor: 'background.paper',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 overflow: 'auto',
+                height: 'calc(100vh - 100px)', // Fill available height
                 borderRadius: 2,
                 '@media (max-width: 600px)': {
                   '& table': {
@@ -610,15 +610,15 @@ export default function MonthlyReportDetail({
                 }}
               >
                 <TableHead>
-                  <TableRow sx={{ bgcolor: '#fafafa', borderBottom: '2px solid #eeeeee' }}>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>이름</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>참여</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>연구</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>시간</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>비고</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>구분</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold', borderRight: '1px solid #eeeeee' }}>직책</TableCell>
-                    <TableCell align="center" sx={{ color: '#455a64', fontWeight: 'bold' }}>집단</TableCell>
+                  <TableRow sx={{ bgcolor: '#eeeeee', borderBottom: '2px solid #e0e0e0' }}>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>이름</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>참여</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>연구</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>시간</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>비고</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>구분</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold', borderRight: '1px solid #e0e0e0' }}>직책</TableCell>
+                    <TableCell align="center" sx={{ color: '#37474f', fontWeight: 'bold' }}>집단</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>

@@ -195,7 +195,7 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
           gap: 2
         }}
       >
-        <CircularProgress size={60} thickness={4} />
+        <CircularProgress size={40} thickness={4} />
         <Typography variant="h6" color="primary">
           로딩 중...
         </Typography>
@@ -220,6 +220,7 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
             fontWeight: 'bold',
             color: 'primary.main',
             mb: 1,
+            fontSize: '1.9rem',
             textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}
         >
@@ -263,18 +264,23 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
             minWidth: '800px'
           }}
         >
-          <Table size="small">
+          <Table size="small" sx={{
+            '& .MuiTableCell-root': {
+              padding: '4px 16px'
+            }
+          }}>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
+              <TableRow sx={{ backgroundColor: '#eeeeee', borderBottom: '2px solid #e0e0e0' }}>
                 <TableCell
                   align="center"
                   sx={{
-                    borderRight: '1px solid rgba(0, 0, 0, 0.3)',
+                    borderRight: '1px solid #e0e0e0',
                     cursor: 'pointer',
                     fontWeight: 'bold',
                     fontSize: '0.9rem',
-                    backgroundColor: '#bbdefb',
-                    '&:hover': { backgroundColor: '#90caf9' }
+                    color: '#1565c0',
+                    backgroundColor: '#e3f2fd',
+                    '&:hover': { backgroundColor: '#bbdefb' }
                   }}
                   onClick={handleYearClick}
                 >
@@ -295,16 +301,16 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
                     </MenuItem>
                   ))}
                 </Menu>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>보고자 수</TableCell>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>전도인 수</TableCell>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>전도인 연구</TableCell>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>보조 수</TableCell>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>보조 시간</TableCell>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>보조 연구</TableCell>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>정규 수</TableCell>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>정규 시간</TableCell>
-                <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.3)', fontWeight: 'bold', fontSize: '0.9rem' }}>정규 연구</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>관리</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>보고자 수</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>전도인 수</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>전도인 연구</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>보조 수</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>보조 시간</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>보조 연구</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>정규 수</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>정규 시간</TableCell>
+                <TableCell align="center" sx={{ borderRight: '1px solid #e0e0e0', fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>정규 연구</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#37474f' }}>관리</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
