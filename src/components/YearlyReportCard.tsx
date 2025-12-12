@@ -123,7 +123,7 @@ export default function YearlyReportCard({
   const userInfo = reportData?.userInfo || {};
   const monthlyRecords = reportData?.monthlyRecords || [];
 
-  // Remove unused variables to fix TypeScript errors
+
 
   useEffect(() => {
     if (open) {

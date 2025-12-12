@@ -29,21 +29,19 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemButton,
-  Checkbox,
   Chip,
+  Checkbox,
+  ListItemButton,
+
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import { getMonthlyDetail, getUnreportedMembers, getYearlyReport } from '../services/clientService';
+import { loadAndApplyFont, generateMonthlyReportPDF, DetailRow } from '../utils/pdfGenerator';
+import { generatePublisherCard as generateS21Card, mergePDFs } from '../utils/pdfTemplateOverlay';
 import YearlyReportCard from './YearlyReportCard';
-import PDFCoordinateAdjuster from './PDFCoordinateAdjuster';
-import jsPDF from 'jspdf';
-import { applyPlugin } from 'jspdf-autotable';
-
-applyPlugin(jsPDF);
 
 interface MonthlyReportDetailProps {
   month: string;
@@ -53,28 +51,7 @@ interface MonthlyReportDetailProps {
   serviceYear?: string; // 봉사연도 추가
 }
 
-// 백엔드에서 반환하는 데이터 구조에 맞게 인터페이스 업데이트
 
-
-interface DetailRow {
-  name: string;
-  participated: boolean;
-  bibleStudies: number | string;
-  hours: number | string;
-  remarks: string | string[];
-  division: string; // '구분' 필드 (I열 또는 J열)
-  position: string;
-  group: string; // 집단 정보도 포함될 수 있음 (백엔드에서 반환)
-}
-
-interface MonthlyRecord {
-  month: string;
-  participated: boolean;
-  bibleStudies: number | string;
-  hours: number | string;
-  remarks: string | string[];
-  division: string;
-}
 
 
 
@@ -86,7 +63,7 @@ export default function MonthlyReportDetail({
   serviceYear: propServiceYear, // props에서 serviceYear 받기
 }: MonthlyReportDetailProps) {
   const [details, setDetails] = useState<DetailRow[]>([]);
-  const [filteredDetails, setFilteredDetails] = useState<DetailRow[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [groupFilter, setGroupFilter] = useState<string>('전체');
@@ -107,15 +84,99 @@ export default function MonthlyReportDetail({
   const [selectedPublishers, setSelectedPublishers] = useState<string[]>([]);
   const [divisionCardFilter, setDivisionCardFilter] = useState<string[]>([]);
 
-  // PDF 좌표 조정 도구
-  const [coordinateAdjusterOpen, setCoordinateAdjusterOpen] = useState(false);
+  const filteredDetails = React.useMemo(() => {
+    let filtered = [...details];
 
+    // 집단 필터 적용
+    if (groupFilter !== '전체') {
+      filtered = filtered.filter(item => item.group === groupFilter);
+    }
+
+    // 구분 필터 적용
+    if (divisionFilter !== '전체') {
+      if (divisionFilter === '전도인') {
+        filtered = filtered.filter(item => !item.division);
+      } else if (divisionFilter === '정규') {
+        filtered = filtered.filter(item => item.division === 'RP');
+      } else if (divisionFilter === '보조') {
+        filtered = filtered.filter(item => item.division === 'AP');
+      } else {
+        filtered = filtered.filter(item => item.division === divisionFilter);
+      }
+    }
+
+    // 이름순으로 정렬
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+    return filtered;
+  }, [details, groupFilter, divisionFilter]);
+
+  // PDF 좌표 조정 도구
+
+  const loadDetails = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getMonthlyDetail(month, managerEmail);
+      setDetails(data);
+    } catch (error) {
+      console.error('Error loading details:', error);
+      setError(error instanceof Error ? error.message : '데이터 로딩 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [month, managerEmail]);
+
+
+  // 선택된 전도인 카드만 출력하는 함수
+  const handleExportSelectedPublisherCardToPDF = React.useCallback(async (name: string) => {
+    setPdfLoading(true);
+    setPdfProgress(0);
+
+    try {
+      setPdfProgress(20);
+
+      // 연간 보고 데이터 가져오기
+      const yearlyData = await getYearlyReport(name, managerEmail);
+
+      setPdfProgress(60);
+
+      // 전도인카드 생성 (S-21 오버레이 사용)
+      const pdfBytes = await generateS21Card(yearlyData, serviceYear);
+
+      setPdfProgress(90);
+      
+      // PDF 다운로드
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `전도인카드_${name}_${month}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      setPdfProgress(100);
+
+      setTimeout(() => {
+        alert(`${name}님의 전도인카드가 성공적으로 생성되었습니다.`);
+      }, 500);
+
+    } catch (error) {
+      console.error('전도인카드 PDF 생성 오류:', error);
+      alert('전도인카드 PDF 생성 중 오류가 발생했습니다.');
+    } finally {
+      setPdfLoading(false);
+      setPdfProgress(0);
+    }
+  }, [month, managerEmail, serviceYear]);
 
   useEffect(() => {
     if (open) {
       loadDetails();
     }
-  }, [open, month, managerEmail]);
+  }, [open, month, managerEmail, loadDetails]);
 
   // propServiceYear가 변경될 때 serviceYear state 업데이트
   useEffect(() => {
@@ -151,7 +212,7 @@ export default function MonthlyReportDetail({
         document.removeEventListener('export-publisher-card', handleExportPublisherCardEvent);
       };
     }
-  }, [open, yearlyReportOpen, onClose]);
+  }, [open, yearlyReportOpen, onClose, handleExportSelectedPublisherCardToPDF]);
 
   // 데이터가 로드되면 사용 가능한 집단과 구분 목록 추출
   useEffect(() => {
@@ -176,70 +237,24 @@ export default function MonthlyReportDetail({
       });
       const divisions = ['전체', ...Array.from(uniqueDivisions) as string[]].sort();
       setAvailableDivisions(divisions);
-
-      // 초기 필터링 적용
-      applyFilters(details, '전체', '전체');
-    } else {
-      setFilteredDetails([]);
     }
   }, [details]);
 
-  // 필터 변경 시 데이터 필터링
-  useEffect(() => {
-    applyFilters(details, groupFilter, divisionFilter);
-  }, [groupFilter, divisionFilter]);
 
-  const loadDetails = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getMonthlyDetail(month, managerEmail);
-      setDetails(data);
-    } catch (error) {
-      console.error('Error loading details:', error);
-      setError(error instanceof Error ? error.message : '데이터 로딩 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // 필터 적용 함수
-  const applyFilters = (data: DetailRow[], group: string, division: string) => {
-    let filtered = [...data];
 
-    // 집단 필터 적용
-    if (group !== '전체') {
-      filtered = filtered.filter(item => item.group === group);
-    }
 
-    // 구분 필터 적용
-    if (division !== '전체') {
-      if (division === '전도인') {
-        filtered = filtered.filter(item => !item.division);
-      } else if (division === '정규') {
-        filtered = filtered.filter(item => item.division === 'RP');
-      } else if (division === '보조') {
-        filtered = filtered.filter(item => item.division === 'AP');
-      } else {
-        filtered = filtered.filter(item => item.division === division);
-      }
-    }
 
-    // 이름순으로 정렬
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
-
-    setFilteredDetails(filtered);
-  };
 
   // 집단 필터 변경 핸들러
-  const handleGroupFilterChange = (event: SelectChangeEvent) => {
+  const handleGroupFilterChange = React.useCallback((event: SelectChangeEvent) => {
     setGroupFilter(event.target.value);
-  };
+  }, []);
 
   // 구분 필터 변경 핸들러
-  const handleDivisionFilterChange = (event: SelectChangeEvent) => {
+  const handleDivisionFilterChange = React.useCallback((event: SelectChangeEvent) => {
     setDivisionFilter(event.target.value);
-  };
+  }, []);
 
   // 메뉴 핸들러
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -257,187 +272,18 @@ export default function MonthlyReportDetail({
     setPdfProgress(0);
 
     try {
-      // 테이블 요소 찾기 - 여러 선택자 시도
-      let element = document.getElementById('monthly-detail-table');
-      if (!element) {
-        element = document.querySelector('.MuiTableContainer-root');
-      }
-      if (!element) {
-        element = document.querySelector('table');
-      }
-      if (!element) {
-        throw new Error('출력할 테이블을 찾을 수 없습니다. 데이터가 로드되었는지 확인해주세요.');
-      }
-
       setPdfProgress(20);
 
-      setPdfProgress(60);
-
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      await loadAndApplyFont(pdf);
-
-      // 여백 설정 - 상하좌우 여백 적용 (하단 여백 축소)
-      const leftMargin = 15;
-      const rightMargin = 15;
-      const pdfTopMargin = 20;
-      const pdfBottomMargin = 10; // 하단 여백 축소 (페이지 번호 제거로 인해)
-      const pageWidth = pdf.internal.pageSize.getWidth();
-
-      // 제목 추가 (텍스트로 직접 추가 - 전도인카드와 동일한 방식)
-      const groupName = groupFilter === '전체' ? '춘천남부회중' : groupFilter;
-      const title = `${groupName} ${month} 상세 보고`;
-
-      // 제목 스타일 설정
-      pdf.setFont('Gowun Dodum');
-      pdf.setFontSize(18);
-      pdf.text(title, pageWidth / 2, pdfTopMargin, { align: 'center' });
-
-      // 제목 높이 계산 (이미지 대신 텍스트 높이 계산)
-      const titleHeight = 10; // 텍스트 제목의 대략적인 높이
-
-      // 테이블 이미지 크기 계산
-
-
-      let position = pdfTopMargin + titleHeight + 2; // 제목 아래 여백 조정 (한 줄 띄우기)
-
-      // 총계 계산
-      const totals = {
-        인원: filteredDetails.length,
-        연구합계: filteredDetails.reduce((sum, detail) => sum + (parseInt(String(detail.bibleStudies)) || 0), 0),
-        시간합계: filteredDetails.reduce((sum, detail) => sum + (parseInt(String(detail.hours)) || 0), 0),
-        RP인원합계: filteredDetails.filter(detail => detail.division === 'RP').length,
-        AP인원합계: filteredDetails.filter(detail => detail.division === 'AP').length,
-        봉종인원합계: filteredDetails.filter(detail => detail.position === '봉사의 종' || detail.position === '봉종').length,
-        장로인원합계: filteredDetails.filter(detail => detail.position === '장로').length,
-        직책인원합계: filteredDetails.filter(detail => detail.position && detail.position !== '전도인').length
-      };
-
-      // 페이지 여백 설정
-
-
-
-
-      // 총계 행을 테이블에 추가 - 스타일 강화
-      const totalRow = document.createElement('tr');
-      const headerRow = element.querySelector('tr');
-      const firstTd = element.querySelector('td');
-      const tbody = element.querySelector('tbody');
-
-      // 기존 총계 행이 있는지 확인하고 제거
-      const existingTotalRow = Array.from(element.querySelectorAll('tbody tr')).find(row =>
-        row.firstElementChild && row.firstElementChild.textContent === '총계'
-      );
-      if (existingTotalRow && existingTotalRow.parentNode) {
-        existingTotalRow.parentNode.removeChild(existingTotalRow);
+      // 데이터가 있는지 확인
+      if (filteredDetails.length === 0) {
+        throw new Error('출력할 데이터가 없습니다.');
       }
 
-      if (headerRow) {
-        totalRow.style.backgroundColor = '#e3f2fd';
-        totalRow.style.fontWeight = 'bold';
-        totalRow.style.borderTop = '2px solid #1976d2';
-      }
+      setPdfProgress(50);
 
-      // 총계 행 데이터 설정
-      const totalCells = [
-        { text: '총계', align: 'center' },
-        { text: totals.인원.toString(), align: 'center' },
-        { text: totals.연구합계.toString(), align: 'center' },
-        { text: totals.시간합계.toString(), align: 'center' },
-        { text: `RP ${totals.RP인원합계}`, align: 'center' },
-        { text: `AP ${totals.AP인원합계}`, align: 'center' },
-        { text: `장로 ${totals.장로인원합계}`, align: 'center' },
-        { text: `봉종 ${totals.봉종인원합계}`, align: 'center' }
-      ];
+      // PDF 생성 함수 호출
+      await generateMonthlyReportPDF(filteredDetails, month, groupFilter);
 
-      if (tbody && firstTd) {
-        totalCells.forEach(cell => {
-          const td = document.createElement('td');
-          td.style.textAlign = cell.align;
-          td.style.padding = '8px';
-          td.style.borderBottom = '1px solid rgba(224, 224, 224, 1)';
-          td.style.fontSize = '0.875rem';
-          td.style.fontWeight = 'bold';
-          td.style.color = 'black';
-          td.innerText = cell.text;
-          totalRow.appendChild(td);
-        });
-        tbody.appendChild(totalRow);
-      }
-
-      // Use jspdf-autotable for table generation
-      const tableHeaders = Array.from(element.querySelectorAll('th')).map(th => th.innerText);
-      const tableRows = Array.from(element.querySelectorAll('tbody tr')).map(tr =>
-        Array.from(tr.querySelectorAll('td')).map(td => td.innerText)
-      );
-
-      // 테이블 너비 계산 (페이지 너비에서 여백 제외)
-      const tableWidth = pageWidth - leftMargin - rightMargin;
-
-      // 각 열의 상대적 너비 비율 설정 (헤더 개수에 맞게 조정)
-      const columnWidths = tableHeaders.map((header) => {
-        // 비고 열은 2배로 늘리고, 나머지는 균등하게 분배
-        if (header === '비고' || header.includes('비고')) {
-          return 0.3; // 비고 열은 2배로 늘림
-        }
-        // 나머지 열은 균등하게 분배 (비고 열 제외한 나머지 공간을 균등하게)
-        return (1 - 0.3) / (tableHeaders.length - 1);
-      });
-
-      // 열 스타일 설정 (명시적 너비 지정)
-      const columnStyles: any = {};
-      for (let i = 0; i < tableHeaders.length; i++) {
-        columnStyles[i] = {
-          cellWidth: tableWidth * columnWidths[i],
-          halign: 'center' // 모든 열을 가운데 정렬
-        };
-      }
-
-      try {
-        (pdf as any).autoTable({
-          head: [tableHeaders],
-          body: tableRows,
-          startY: position,
-          margin: { left: leftMargin, right: rightMargin, bottom: pdfBottomMargin },
-          styles: {
-            font: 'Gowun Dodum',
-            fontSize: 7, // 폰트 크기 줄임
-            cellPadding: 2, // 셀 패딩 줄임
-            lineColor: [224, 224, 224],
-            lineWidth: 0.1,
-            textColor: [0, 0, 0]
-          },
-          headStyles: {
-            fillColor: [23, 107, 135],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            font: 'Gowun Dodum',
-            fontSize: 9, // 헤더 폰트 크기 더 키움
-            minCellHeight: 8, // 헤더 셀 높이 더 키움
-            halign: 'center', // 가운데 정렬
-            valign: 'middle', // 세로 가운데 정렬
-            lineWidth: 0.5 // 테두리 두께 증가
-          },
-          bodyStyles: {
-            fillColor: [255, 255, 255]
-          },
-          alternateRowStyles: {
-            fillColor: [245, 245, 245]
-          },
-          columnStyles: columnStyles, // 열 스타일 적용
-          // 페이지 번호 표시 제거하고 여백 확보
-          didDrawPage: function () {
-            // 페이지 번호 표시 제거
-          }
-        });
-      } catch (error) {
-        console.error('테이블 생성 오류:', error);
-        throw new Error('테이블 생성 중 오류가 발생했습니다: ' + (error instanceof Error ? error.message : String(error)));
-      }
-
-      setPdfProgress(90);
-
-      pdf.save(`${month}_상세보고.pdf`);
       setPdfProgress(100);
 
       // 성공 메시지
@@ -475,9 +321,7 @@ export default function MonthlyReportDetail({
     setPublisherCardFilterOpen(false);
 
     try {
-      const pdf = new jsPDF('l', 'mm', 'a4'); // 가로 모드
-      await loadAndApplyFont(pdf);
-      let isFirstPage = true;
+      const pdfBytesArray: Uint8Array[] = [];
 
       // 선택된 전도인과 구분으로 필터링
       const filteredMembers = filteredDetails.filter(member => {
@@ -500,20 +344,30 @@ export default function MonthlyReportDetail({
         const member = filteredMembers[i];
         setPdfProgress((i / totalMembers) * 80);
 
-        if (!isFirstPage) {
-          pdf.addPage();
-        }
-        isFirstPage = false;
-
         // 연간 보고 데이터 가져오기
         const yearlyData = await getYearlyReport(member.name, managerEmail);
 
-        // 전도인카드 생성
-        await generatePublisherCard(pdf, yearlyData, serviceYear);
+        // 전도인카드 생성 (S-21 오버레이)
+        const pdfBytes = await generateS21Card(yearlyData, serviceYear);
+        pdfBytesArray.push(pdfBytes);
       }
 
       setPdfProgress(90);
-      pdf.save(`${month}_전도인카드_선택됨.pdf`);
+      
+      // PDF 병합
+      const mergedPdfBytes = await mergePDFs(pdfBytesArray);
+
+      // 다운로드
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${month}_전도인카드_선택됨.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
       setPdfProgress(100);
 
       setTimeout(() => {
@@ -534,251 +388,11 @@ export default function MonthlyReportDetail({
     handleOpenPublisherCardFilter();
   };
 
-  // 선택된 전도인 카드만 출력하는 함수
-  const handleExportSelectedPublisherCardToPDF = async (name: string) => {
-    setPdfLoading(true);
-    setPdfProgress(0);
-
-    try {
-      const pdf = new jsPDF('l', 'mm', 'a4'); // 가로 모드
-      await loadAndApplyFont(pdf);
-
-      setPdfProgress(20);
-
-      // 연간 보고 데이터 가져오기
-      const yearlyData = await getYearlyReport(name, managerEmail);
 
 
 
 
 
-      setPdfProgress(60);
-
-      // 전도인카드 생성
-      await generatePublisherCard(pdf, yearlyData, serviceYear);
-
-      setPdfProgress(90);
-      pdf.save(`전도인카드_${name}_${month}.pdf`);
-      setPdfProgress(100);
-
-      setTimeout(() => {
-        alert(`${name}님의 전도인카드가 성공적으로 생성되었습니다.`);
-      }, 500);
-
-    } catch (error) {
-      console.error('전도인카드 PDF 생성 오류:', error);
-      alert('전도인카드 PDF 생성 중 오류가 발생했습니다.');
-    } finally {
-      setPdfLoading(false);
-      setPdfProgress(0);
-    }
-  };
-
-  // 전도인카드 생성 함수
-  const generatePublisherCard = async (pdf: jsPDF, yearlyData: any, currentServiceYear?: string) => {
-    // 여백 설정 (하단 여백 축소)
-    const margin = 15; // 좌우 여백 mm 단위
-    const topMargin = 15; // 상단 여백
-    const bottomMargin = 5; // 하단 여백 축소 (페이지 번호 제거로 인해)
-    const pageWidth = pdf.internal.pageSize.getWidth();
-
-    // 한글 폰트 설정 (Gowun Dodum 폰트 사용)
-    // loadAndApplyFont 함수에서 이미 폰트를 설정했지만, 확실하게 하기 위해 다시 설정
-    pdf.setFont('Gowun Dodum');
-    pdf.setFontSize(10);
-
-    // 제목 추가
-    const title = '회중용 전도인 기록 카드';
-    pdf.setFontSize(18);
-    pdf.text(title, pageWidth / 2, topMargin + 5, { align: 'center' });
-
-    // 개인 정보 섹션 추가
-    const userInfo = yearlyData.userInfo || {};
-    let yPos = topMargin + 20;
-
-    pdf.setFontSize(10);
-    pdf.text(`이름: ${userInfo.name || ''}`, margin, yPos);
-    pdf.text(`생년월일: ${userInfo.birthDate || ''}`, pageWidth / 2, yPos);
-    yPos += 7;
-    pdf.text(`성별: ${userInfo.gender || ''}`, margin, yPos);
-    pdf.text(`침례일자: ${userInfo.baptismDate || ''}`, pageWidth / 2, yPos);
-    yPos += 7;
-    pdf.text(`${userInfo.hope || ''}`, margin, yPos);
-    pdf.text(`${[
-      userInfo.isElder && '장로',
-      userInfo.isMinisterialServant && '봉사의 종',
-      userInfo.isRegularPioneer && '정규 파이오니아',
-      userInfo.isSpecialPioneer && '특별 파이오니아',
-      userInfo.isMissionary && '야외 선교인'
-    ].filter(Boolean).join(', ')}`, pageWidth / 2, yPos);
-
-    const infoHeight = 35; // 개인정보 섹션 높이 줄임
-    const titleHeight = 15; // 제목 높이 줄임
-
-    // 개인정보와 테이블 사이 여백 조정 - 간격 더 줄임
-    yPos = topMargin + titleHeight + infoHeight - 5;
-
-    // 월별 기록 테이블을 이미지로 생성 - 크기 조정
-    const months = ['9월', '10월', '11월', '12월', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '총계'];
-    const monthlyRecords = yearlyData.monthlyRecords || [];
-    let totalHours = 0;
-    let totalStudies = 0;
-    let totalParticipated = 0;
-
-    months.forEach(month => {
-      if (month === '총계') {
-        // Calculate totals for the summary row
-        totalHours = monthlyRecords.reduce((sum: number, record: MonthlyRecord) => sum + (record.hours && typeof record.hours === 'number' ? record.hours : 0), 0);
-        totalStudies = monthlyRecords.reduce((sum: number, record: MonthlyRecord) => sum + (record.bibleStudies && typeof record.bibleStudies === 'number' ? record.bibleStudies : 0), 0);
-      } else {
-        const record = monthlyRecords.find((r: any) => r.month === month) || {};
-        if (record.participated) totalParticipated++;
-      }
-    });
-
-
-
-    // Use jspdf-autotable for the monthly records table
-    // 봉사연도 값을 가져와서 표시 (yearlyData.serviceYear가 없으면 전달받은 currentServiceYear 사용)
-    const serviceYearDisplay = yearlyData.serviceYear || currentServiceYear || '봉사연도';
-    const tableHeaders = [serviceYearDisplay, '참여', '성서연구', '보조 파이오니아', '시간', '비고'];
-    const tableRows = months.map(month => {
-      if (month === '총계') {
-        return [
-          '합계',
-          '',
-          totalStudies > 0 ? totalStudies.toString() : '',
-          '',
-          totalHours > 0 ? totalHours.toString() : '',
-          monthlyRecords.reduce((sum: number, record: MonthlyRecord) => {
-            const remarksString = String(record.remarks || ''); // Ensure remarks is a string
-            const matches = remarksString.match(/: (\d+)시간/g);
-            if (!matches) return sum;
-            return sum + matches.reduce((hoursSum, match) => {
-              const matchResult = match.match(/\d+/);
-              if (!matchResult) return hoursSum;
-              const hours = parseInt(matchResult[0]);
-              return hoursSum + (isNaN(hours) ? 0 : hours);
-            }, 0);
-          }, 0) || ''
-        ];
-      } else {
-        const record = monthlyRecords.find((r: any) => r.month === month) || {};
-        return [
-          record.month,
-          record.participated ? 'Y' : '', // 유니코드 체크 표시 사용
-          typeof record.bibleStudies === 'number' && record.bibleStudies > 0 ? record.bibleStudies : '',
-          record.division === 'AP' ? 'Y' : '', // 유니코드 체크 표시 사용
-          typeof record.hours === 'number' && record.hours > 0 ? record.hours : '',
-          record.remarks || ''
-        ];
-      }
-    });
-
-    // 테이블 너비 계산 (페이지 너비에서 여백 제외)
-    const tableWidth = pageWidth - (margin * 2);
-    // 각 열의 상대적 너비 비율 설정 - 가독성 향상을 위해 조정
-    const columnWidths = [0.12, 0.08, 0.12, 0.15, 0.12, 0.41]; // 비율 합은 1.0이어야 함
-
-    // 열 스타일 설정 (명시적 너비 지정)
-    const columnStyles: any = {};
-    for (let i = 0; i < tableHeaders.length; i++) {
-      columnStyles[i] = {
-        cellWidth: tableWidth * columnWidths[i],
-        halign: i === 0 ? 'left' : 'center' // 첫 번째 열은 왼쪽 정렬, 나머지는 가운데 정렬
-      };
-    }
-
-    try {
-      (pdf as any).autoTable({
-        head: [tableHeaders],
-        body: tableRows,
-        startY: topMargin + titleHeight + infoHeight - 10, // 개인정보와 테이블 사이 여백 더 줄임
-        margin: { left: margin, right: margin, bottom: bottomMargin }, // 하단 여백 설정 추가
-        styles: {
-          font: 'Gowun Dodum',
-          fontSize: 8, // 폰트 크기 약간 키움
-          cellPadding: 3, // 셀 패딩 조정
-          lineColor: [80, 80, 80], // 테두리 색상 진하게
-          lineWidth: 0.2, // 테두리 두께 증가
-          textColor: [0, 0, 0]
-        },
-        headStyles: {
-          fillColor: [23, 107, 135],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          font: 'Gowun Dodum',
-          fontSize: 10, // 헤더 폰트 크기 더 키움
-          minCellHeight: 10, // 헤더 셀 높이 더 키움
-          halign: 'center', // 가운데 정렬
-          valign: 'middle', // 세로 가운데 정렬
-          lineWidth: 0.5 // 테두리 두께 증가
-        },
-        bodyStyles: {
-          fillColor: [255, 255, 255]
-        },
-        alternateRowStyles: {
-          fillColor: [240, 240, 240] // 대비 약간 강화
-        },
-        columnStyles: columnStyles, // 열 스타일 적용
-        // 페이지 번호 표시 제거하고 여백 확보
-        didDrawPage: function () {
-          // 페이지 번호 표시 제거
-        }
-      });
-    } catch (error) {
-      console.error('테이블 생성 오류:', error);
-      throw new Error('테이블 생성 중 오류가 발생했습니다: ' + (error instanceof Error ? error.message : String(error)));
-    }
-  };
-
-  // 미보고자 확인 함수
-  const loadAndApplyFont = async (pdf: jsPDF) => {
-    try {
-      // 한글 폰트 로딩 시도
-      try {
-        // 폰트 파일 직접 로드 (상대 경로 사용)
-        const fontResponse = await fetch(`${import.meta.env.BASE_URL}GowunDodum-Regular.ttf`);
-        if (!fontResponse.ok) {
-          throw new Error(`Font fetch failed with status: ${fontResponse.status}`);
-        }
-
-        // 폰트 파일을 ArrayBuffer로 변환
-        const fontBuffer = await fontResponse.arrayBuffer();
-
-        // 작은 청크로 나누어 Base64 인코딩 (Maximum call stack size exceeded 오류 방지)
-        const CHUNK_SIZE = 1024;
-        let binary = '';
-        const bytes = new Uint8Array(fontBuffer);
-        const len = bytes.byteLength;
-
-        for (let i = 0; i < len; i += CHUNK_SIZE) {
-          const chunk = bytes.slice(i, Math.min(i + CHUNK_SIZE, len));
-          binary += String.fromCharCode.apply(null, Array.from(chunk));
-        }
-
-        const fontBase64 = btoa(binary);
-
-        // 폰트를 PDF의 VFS에 추가하고 등록
-        pdf.addFileToVFS('GowunDodum-Regular.ttf', fontBase64);
-        pdf.addFont('GowunDodum-Regular.ttf', 'Gowun Dodum', 'normal');
-        pdf.addFont('GowunDodum-Regular.ttf', 'Gowun Dodum', 'bold'); // 볼드 폰트도 추가
-        pdf.setFont('Gowun Dodum');
-        // 폰트 설정 강화
-        (pdf as any).setFontSize(10);
-        (pdf as any).setTextColor(0, 0, 0);
-        console.log('한글 폰트 로딩 성공: Gowun Dodum');
-      } catch (fontError) {
-        console.error('한글 폰트 로딩 실패:', fontError);
-        throw fontError; // 상위 catch 블록으로 전달
-      }
-    } catch (error) {
-      console.error('폰트 로딩 오류:', error);
-      // 폰트 로딩 실패 시 기본 폰트로 대체
-      pdf.setFont('helvetica');
-      console.log('기본 폰트 사용: helvetica');
-    }
-  };
 
   const handleCheckUnreported = async () => {
     handleMenuClose();

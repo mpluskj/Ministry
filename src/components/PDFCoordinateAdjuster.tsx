@@ -44,7 +44,7 @@ const DUMMY_YEARLY_DATA = {
   },
   monthlyRecords: [
     { month: '9월', participated: true, bibleStudies: 2, hours: 50, division: 'RP', remarks: '' },
-    { month: '10월', participated: true, bibleStudies: 3, hours: 52, division: 'RP', remarks: '테스트' },
+    { month: '10월', participated: true, bibleStudies: 3, hours: 52, division: 'RP', remarks: '' },
     { month: '11월', participated: true, bibleStudies: 2, hours: 48, division: 'AP', remarks: '' },
   ]
 };
@@ -68,7 +68,7 @@ export default function PDFCoordinateAdjuster({
                 .then(res => res.json())
                 .then(data => setCoordinates(data))
                 .catch(() => {
-                    console.warn("pdf-coordinates.json not found, starting fresh.");
+
                     setCoordinates({
                         name: { x: 0, y: 0, label: '성명' } // minimal default
                     });

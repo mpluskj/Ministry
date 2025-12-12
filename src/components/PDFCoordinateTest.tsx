@@ -78,8 +78,6 @@ export default function PDFCoordinateTest() {
             <PDFCoordinateAdjuster
                 open={adjusterOpen}
                 onClose={() => setAdjusterOpen(false)}
-                yearlyData={sampleYearlyData}
-                serviceYear="2026"
             />
         </Container>
     );

@@ -61,30 +61,7 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
 
 
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        // 최적화: 3개의 API 호출을 1개로 통합
-        const dashboardData = await getInitialDashboardData(email);
 
-        // 모든 상태를 한 번에 업데이트 (리렌더링 최소화)
-        setServiceYear(dashboardData.serviceYear.currentYear);
-        setServiceYears(dashboardData.serviceYear.years);
-        setSheetTitle(dashboardData.spreadsheet.title);
-        setManagerType(dashboardData.manager.type);
-        setGroupName(dashboardData.manager.groupName);
-        setManagerName(dashboardData.manager.name);
-        setReports(Array.isArray(dashboardData.reports) ? dashboardData.reports : []);
-
-      } catch (error) {
-        console.error('Error initializing dashboard:', error);
-        setReports([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, [email]);
 
 
 
@@ -124,7 +101,7 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
     }
   };
 
-  const loadData = async () => {
+  const loadData = React.useCallback(async () => {
     try {
       setLoading(true);
 
@@ -146,7 +123,11 @@ export default function ManagerDashboard({ email, onLogout }: ManagerDashboardPr
     } finally {
       setLoading(false);
     }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleToggleStatus = async (month: string, currentStatus: string) => {
     if (currentStatus === 'COMPLETED') {

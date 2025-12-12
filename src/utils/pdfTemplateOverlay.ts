@@ -60,9 +60,7 @@ export async function generatePublisherCard(
 
         // Debug: Log all form fields
         const fields = form.getFields();
-        fields.forEach(field => {
-            console.log(`Field name: ${field.getName()}, Type: ${field.constructor.name}`);
-        });
+        // 필드 정보 디버그 출력 제거
 
         // Use existing form fields instead of creating new ones
 
@@ -80,13 +78,14 @@ export async function generatePublisherCard(
             }
             const fieldName = config.fieldName; // Use the Korean name from coordinates or map it
             // Map English keys to Korean field names
-            let koreanName;
+            let koreanName = '';
             switch(key) {
                 case 'name': koreanName = '성명'; break;
                 case 'birthDate': koreanName = '생년월일'; break;
                 case 'baptismDate': koreanName = '침례 일자'; break;
             }
             try {
+                if (!koreanName) return;
                 const field = form.getTextField(koreanName);
                 field.setText(userInfo[key] ?? '');
                 field.setFontSize(12); // Adjust font size to prevent clipping
@@ -147,8 +146,8 @@ export async function generatePublisherCard(
                      console.warn(`Missing coordinate config for key: ${colKey}`);
                      return;
                 }
-                let fieldName;
-                let value;
+                let fieldName = '';
+                let value: string | boolean = '';
                 let isCheckbox = false;
                 switch (config.fieldName) {
                     case 'participated':
@@ -175,12 +174,14 @@ export async function generatePublisherCard(
                         break;
                 }
                 if (isCheckbox) {
+                    if (!fieldName) return;
                     const field = form.getCheckBox(fieldName);
                     if (value) field.check();
                     else field.uncheck();
                 } else {
+                    if (!fieldName) return;
                     const field = form.getTextField(fieldName);
-                    field.setText(value);
+                    field.setText(String(value));
                     if (config.multiline) field.enableMultiline();
                     field.setFontSize(11); // Adjust font size
                     field.setAlignment(1); // Center alignment
@@ -322,7 +323,7 @@ if (total == 0) {
              });
 
              // 3. Ensure "Total" field is in the Calculation Order (CO) of the AcroForm
-              const catalog = pdfDoc.getCatalog();
+              const catalog = pdfDoc.catalog;
               const acroForm = catalog.get(PDFName.of('AcroForm'));
               if (acroForm instanceof PDFDict) {
                   // Use lookup to resolve reference if CO exists
@@ -350,9 +351,18 @@ if (total == 0) {
         form.flatten();
         // Save and return PDF bytes
         return await pdfDoc.save();
-
     } catch (error) {
-        console.error('PDF 생성 오류:', error);
+        console.error('S-21 PDF 생성 오류:', error);
         throw error;
     }
+}
+
+export async function mergePDFs(pdfBytesArray: Uint8Array[]): Promise<Uint8Array> {
+    const mergedPdf = await PDFDocument.create();
+    for (const pdfBytes of pdfBytesArray) {
+        const pdf = await PDFDocument.load(pdfBytes);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+    }
+    return await mergedPdf.save();
 }
