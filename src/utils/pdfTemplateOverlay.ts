@@ -131,6 +131,7 @@ export async function generatePublisherCard(
         const monthlyRecords = yearlyData.monthlyRecords || [];
         const tableColumns = ['tableParticipatedX', 'tableStudiesX', 'tableAPX', 'tableHoursX', 'tableRemarksX'];
         let totalHours = 0;
+        let totalRemarks = 0;
         
         SERVICE_YEAR_MONTH_ORDER.forEach((month, index) => {
             const record = monthlyRecords.find((r: any) => r.month === month) || {};
@@ -138,6 +139,14 @@ export async function generatePublisherCard(
             // Accumulate hours
             if (record.hours && typeof record.hours === 'number') {
                 totalHours += record.hours;
+            }
+
+            // Accumulate numbers in remarks
+            if (record.remarks) {
+                const matches = String(record.remarks).match(/-?\d+(\.\d+)?/g);
+                if (matches) {
+                    matches.forEach(m => totalRemarks += parseFloat(m));
+                }
             }
 
             tableColumns.forEach(colKey => {
@@ -225,7 +234,48 @@ export async function generatePublisherCard(
         totalHoursField.setText(totalHours > 0 ? String(totalHours) : '');
         totalHoursField.setFontSize(11);
         totalHoursField.setAlignment(1);
+        
+        // Adjust total hours position
+        try {
+            const widgets = totalHoursField.acroField.getWidgets();
+            widgets.forEach(widget => {
+                const rect = widget.getRectangle();
+                widget.setRectangle({
+                    x: rect.x,
+                    y: rect.y + 1, // +1 point shift
+                    width: rect.width,
+                    height: rect.height
+                });
+            });
+        } catch (e) {
+            console.warn('Failed to adjust total hours field position:', e);
+        }
+        
         totalHoursField.updateAppearances(font);
+
+        // Set total remarks
+        try {
+            const totalRemarksField = form.getTextField('총계 비고');
+            totalRemarksField.setText(totalRemarks > 0 ? String(totalRemarks) : '');
+            totalRemarksField.setFontSize(11);
+            totalRemarksField.setAlignment(1);
+
+            // Adjust total remarks position
+            const widgets = totalRemarksField.acroField.getWidgets();
+            widgets.forEach(widget => {
+                const rect = widget.getRectangle();
+                widget.setRectangle({
+                    x: rect.x,
+                    y: rect.y + 1, // +1 point shift
+                    width: rect.width,
+                    height: rect.height
+                });
+            });
+            
+            totalRemarksField.updateAppearances(font);
+        } catch (e) {
+            console.warn('Total remarks field not found or failed to update:', e);
+        }
         
         // Set service year
         const serviceYearField = form.getTextField('봉사 연도');
