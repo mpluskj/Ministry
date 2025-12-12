@@ -15,10 +15,15 @@ import {
   Box,
   Button,
   CircularProgress,
+  Grid,
+  Divider,
+  useTheme,
+  Chip,
 } from '@mui/material';
 
 import './YearlyReportCard.css';
 import CloseIcon from '@mui/icons-material/Close';
+import PrintIcon from '@mui/icons-material/Print';
 import { getYearlyReport, getServiceYears } from '../services/clientService';
 import { generatePublisherCard } from '../utils/pdfTemplateOverlay';
 
@@ -62,6 +67,7 @@ export default function YearlyReportCard({
   open,
   onClose,
 }: YearlyReportCardProps) {
+  const theme = useTheme();
   const [reportData, setReportData] = useState<YearlyReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,28 +153,30 @@ export default function YearlyReportCard({
       PaperProps={{
         sx: {
           bgcolor: 'background.paper',
-          color: 'text.primary'
+          borderRadius: 3,
+          overflow: 'hidden'
         }
       }}
     >
       <DialogTitle sx={{ 
-        bgcolor: '#9e9e9e',
+        bgcolor: 'primary.main',
         color: 'white',
-        fontWeight: 'bold',
-        fontSize: '1.5rem',
-        textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+        py: 2,
+        px: 3,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" sx={{ width: '100%', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>회중용 전도인 기록 카드</Typography>
-          <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
+            회중용 전도인 기록 카드
+          </Typography>
+          <IconButton onClick={onClose} size="small" sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
             <CloseIcon />
           </IconButton>
         </Box>
       </DialogTitle>
       <DialogContent sx={{ 
-        bgcolor: 'background.paper', 
-        color: 'text.primary', 
-        p: 3
+        bgcolor: '#f8fafc', 
+        p: { xs: 2, md: 4 }
       }}>
         {loading ? (
           <Box sx={{ 
@@ -176,69 +184,78 @@ export default function YearlyReportCard({
             flexDirection: 'column',
             alignItems: 'center', 
             justifyContent: 'center',
-            minHeight: '200px'
+            minHeight: '300px'
           }}>
-            <div className="loading-spinner" />
-            <Typography sx={{ 
-              color: 'text.primary',
-              mt: 2,
-              animation: 'pulse 1.5s infinite'
-            }}>
+            <CircularProgress size={40} thickness={4} />
+            <Typography sx={{ mt: 2, color: 'text.secondary', fontWeight: 500 }}>
               데이터를 불러오는 중입니다...
             </Typography>
           </Box>
         ) : error ? (
-          <Typography color="error">{error}</Typography>
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <Typography color="error" variant="h6">{error}</Typography>
+          </Box>
         ) : (
           <Box>
-            <Box sx={{ 
+            {/* Personal Info Section */}
+            <Paper elevation={0} sx={{ 
               mb: 3,
-              bgcolor: '#f5f5f5',
-              p: 2,
+              bgcolor: 'white',
+              p: 3,
               borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              mx: '2pt'
+              border: '1px solid rgba(0,0,0,0.08)'
             }}>
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                gap: 2,
-                px: '2pt'
-              }}>
-                <Typography sx={{ color: 'black' }}><strong>이름:</strong> {userInfo.name}</Typography>
-                <Typography sx={{ color: 'black' }}><strong>생년월일:</strong> {userInfo.birthDate}</Typography>
-                <Typography sx={{ color: 'black' }}><strong>성별:</strong> {userInfo.gender}</Typography>
-                <Typography sx={{ color: 'black' }}><strong>침례일자:</strong> {userInfo.baptismDate}</Typography>
-                <Typography sx={{ fontWeight: 'bold' }}>{userInfo.hope}</Typography>
-                <Typography component="span" sx={{ fontWeight: 'bold' }}>{[userInfo.isElder && '장로',
-                  userInfo.isMinisterialServant && '봉사의 종',
-                  userInfo.isRegularPioneer && '정규 파이오니아',
-                  userInfo.isSpecialPioneer && '특별 파이오니아',
-                  userInfo.isMissionary && '야외 선교인'].filter(Boolean).join(', ')}</Typography>
-              </Box>
-            </Box>
-            <TableContainer component={Paper} sx={{ 
-              bgcolor: 'background.paper',
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'center' }}>
+                    <Typography variant="subtitle2" color="text.secondary">이름</Typography>
+                    <Typography variant="body1" fontWeight="bold">{userInfo.name}</Typography>
+                    
+                    <Typography variant="subtitle2" color="text.secondary">생년월일</Typography>
+                    <Typography variant="body1">{userInfo.birthDate}</Typography>
+                    
+                    <Typography variant="subtitle2" color="text.secondary">성별</Typography>
+                    <Typography variant="body1">{userInfo.gender}</Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'center' }}>
+                    <Typography variant="subtitle2" color="text.secondary">침례일자</Typography>
+                    <Typography variant="body1">{userInfo.baptismDate}</Typography>
+                    
+                    <Typography variant="subtitle2" color="text.secondary">희망</Typography>
+                    <Typography variant="body1" fontWeight="bold" color="primary.main">{userInfo.hope}</Typography>
+                    
+                    <Typography variant="subtitle2" color="text.secondary">직책/신분</Typography>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                      {[userInfo.isElder && '장로',
+                        userInfo.isMinisterialServant && '봉사의 종',
+                        userInfo.isRegularPioneer && '정규 파이오니아',
+                        userInfo.isSpecialPioneer && '특별 파이오니아',
+                        userInfo.isMissionary && '야외 선교인'].filter(Boolean).map((role) => (
+                          <Chip key={role as string} label={role as string} size="small" color="secondary" variant="outlined" />
+                        ))}
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Paper>
+
+            {/* Table Section */}
+            <TableContainer component={Paper} elevation={0} sx={{ 
               borderRadius: 2,
-              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+              border: '1px solid rgba(0,0,0,0.08)',
               overflow: 'hidden'
             }}>
-              <Table size="small" sx={{ 
-                '& .MuiTableCell-root': { 
-                  borderColor: 'divider',
-                  padding: '8px',
-                  fontSize: '0.875rem',
-                  border: '1px solid rgb(80, 80, 80)'
-                }
-              }}>
+              <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ bgcolor: '#e0e0e0' }}>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>{serviceYear}</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>참여</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>성서연구</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>보조 파이오니아</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '80px' }}>시간</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', width: '200px' }}>비고</TableCell>
+                  <TableRow sx={{ bgcolor: '#f1f5f9' }}>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: 'text.secondary', py: 1.5, borderBottom: '1px solid rgba(0,0,0,0.1)' }}>{serviceYear}</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>참여</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>성서연구</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>보조 파이오니아</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>시간</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '1px solid rgba(0,0,0,0.1)', minWidth: 200 }}>비고</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -253,43 +270,31 @@ export default function YearlyReportCard({
                     return (
                       <TableRow 
                         key={month}
+                        hover
                         sx={{
-                          bgcolor: index % 2 === 0 ? '#f9f9f9' : 'white',
-                          '&:hover': {
-                            bgcolor: '#e3f2fd',
-                            '& .MuiTableCell-root': {
-                              color: '#1976d2'
-                            }
-                          }
+                          '&:hover': { bgcolor: 'rgba(0,0,0,0.02) !important' }
                         }}
                       >
-                        <TableCell align="center">{month}</TableCell>
-                        <TableCell align="center">{monthData.participated ? 'Y' : ''}</TableCell>
-                        <TableCell align="center">{typeof monthData.bibleStudies === 'number' && monthData.bibleStudies > 0 ? monthData.bibleStudies : ''}</TableCell>
-                        <TableCell align="center">{monthData.division === 'AP' ? 'Y' : ''}</TableCell>
-                        <TableCell align="center">{typeof monthData.hours === 'number' && monthData.hours > 0 ? monthData.hours : ''}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'pre-line' }}>{monthData.remarks}</TableCell>
+                        <TableCell align="center" sx={{ borderBottom: '1px solid rgba(0,0,0,0.05)', color: 'text.secondary', fontWeight: 500 }}>{month}</TableCell>
+                        <TableCell align="center" sx={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>{monthData.participated ? '✔' : ''}</TableCell>
+                        <TableCell align="center" sx={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>{typeof monthData.bibleStudies === 'number' && monthData.bibleStudies > 0 ? monthData.bibleStudies : ''}</TableCell>
+                        <TableCell align="center" sx={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>{monthData.division === 'AP' ? '✔' : ''}</TableCell>
+                        <TableCell align="center" sx={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>{typeof monthData.hours === 'number' && monthData.hours > 0 ? monthData.hours : ''}</TableCell>
+                        <TableCell sx={{ borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'pre-line', fontSize: '0.85rem' }}>{monthData.remarks}</TableCell>
                       </TableRow>
                     );
                   })}
-                  <TableRow sx={{ 
-                    bgcolor: '#e0e0e0', 
-                    fontWeight: 'bold',
-                    '& .MuiTableCell-root': {
-                      fontWeight: 'bold',
-                      color: '#424242'
-                    }
-                  }}>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>합계</TableCell>
+                  <TableRow sx={{ bgcolor: '#e2e8f0' }}>
+                    <TableCell align="center" sx={{ fontWeight: 800 }}>합계</TableCell>
                     <TableCell align="center"></TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>
+                    <TableCell align="center" sx={{ fontWeight: 800 }}>
                       {monthlyRecords.reduce((sum, record) => sum + (typeof record.bibleStudies === 'number' ? record.bibleStudies : 0), 0) || ''}
                     </TableCell>
                     <TableCell align="center"></TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>
+                    <TableCell align="center" sx={{ fontWeight: 800 }}>
                       {monthlyRecords.reduce((sum, record) => sum + (typeof record.hours === 'number' ? record.hours : 0), 0) || ''}
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>
+                    <TableCell align="center" sx={{ fontWeight: 800 }}>
                       {monthlyRecords.reduce((sum, record) => {
                         const matches = String(record.remarks).match(/: (\d+)시간/g);
                         if (!matches) return sum;
@@ -308,60 +313,31 @@ export default function YearlyReportCard({
             
             <Box sx={{ 
               display: 'flex', 
-              justifyContent: 'space-between', 
-              mt: 3 
+              justifyContent: 'flex-end', 
+              gap: 2,
+              mt: 4 
             }}>
+              <Button
+                onClick={onClose}
+                variant="outlined"
+                color="inherit"
+                sx={{ borderRadius: 2, minWidth: 100 }}
+              >
+                닫기
+              </Button>
               <Button
                 onClick={handleGeneratePdf}
                 variant="contained"
                 color="primary"
+                startIcon={isGenerating ? <CircularProgress size={20} color="inherit" /> : <PrintIcon />}
                 disabled={isGenerating}
                 sx={{
-                  fontWeight: 'bold',
-                  px: 4,
-                  py: 1,
                   borderRadius: 2,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                  '&:hover': {
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
-                  },
-                  position: 'relative',
+                  px: 3,
+                  boxShadow: theme.shadows[2]
                 }}
               >
-                {isGenerating ? (
-                  <>
-                    <CircularProgress size={24} sx={{
-                       color: 'primary.light',
-                       position: 'absolute',
-                       top: '50%',
-                       left: '50%',
-                       marginTop: '-12px',
-                       marginLeft: '-12px',
-                    }}/>
-                    생성 중...
-                  </>
-                ) : (
-                  '전도인카드 출력'
-                )}
-              </Button>
-              <Button
-                onClick={onClose}
-                variant="contained"
-                sx={{
-                  bgcolor: '#e0e0e0',
-                  color: 'black',
-                  fontWeight: 'bold',
-                  px: 4,
-                  py: 1,
-                  borderRadius: 2,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                  '&:hover': {
-                    bgcolor: '#757575',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
-                  }
-                }}
-              >
-                닫기
+                {isGenerating ? '생성 중...' : '전도인카드 출력'}
               </Button>
             </Box>
           </Box>
