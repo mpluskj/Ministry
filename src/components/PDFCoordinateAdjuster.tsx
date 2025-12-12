@@ -288,9 +288,10 @@ async function generatePreviewPdf(
     serviceYear: string,
     coordinates: Record<string, Coordinate>
 ) {
+    const baseUrl = import.meta.env.BASE_URL;
     const [templateBytes, fontBytes] = await Promise.all([
-        fetch('/S-21_KO.pdf').then(res => res.arrayBuffer()),
-        fetch('/GowunDodum-Regular.ttf').then(res => res.arrayBuffer()),
+        fetch(`${baseUrl}S-21_KO.pdf`).then(res => res.arrayBuffer()),
+        fetch(`${baseUrl}GowunDodum-Regular.ttf`).then(res => res.arrayBuffer()),
     ]);
 
     const pdfDoc = await PDFDocument.load(templateBytes);
