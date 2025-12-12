@@ -32,12 +32,17 @@ import {
   Chip,
   Checkbox,
   ListItemButton,
-
+  useTheme,
+  useMediaQuery,
+  Tooltip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import ScreenRotationIcon from '@mui/icons-material/ScreenRotation';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import { getMonthlyDetail, getUnreportedMembers, getYearlyReport } from '../services/clientService';
 import { loadAndApplyFont, generateMonthlyReportPDF, DetailRow } from '../utils/pdfGenerator';
 import { generatePublisherCard as generateS21Card, mergePDFs } from '../utils/pdfTemplateOverlay';
@@ -78,6 +83,11 @@ export default function MonthlyReportDetail({
   const [unreportedMembers, setUnreportedMembers] = useState<Array<{ name: string, group: string }>>([]);
   const [unreportedDialogOpen, setUnreportedDialogOpen] = useState(false);
   const [serviceYear, setServiceYear] = useState<string>(propServiceYear || '');
+  
+  // Mobile check
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 전도인카드 필터링을 위한 상태 변수
   const [publisherCardFilterOpen, setPublisherCardFilterOpen] = useState(false);
@@ -304,6 +314,46 @@ export default function MonthlyReportDetail({
     }
   };
 
+  // Handle Landscape Mode
+  const handleLandscapeMode = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+        // @ts-ignore - Screen Orientation API might not be fully typed
+        if (screen.orientation && screen.orientation.lock) {
+          // @ts-ignore
+          await screen.orientation.lock('landscape');
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+          setIsFullscreen(false);
+          // @ts-ignore
+          if (screen.orientation && screen.orientation.unlock) {
+             // @ts-ignore
+            screen.orientation.unlock();
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to toggle fullscreen/orientation:', err);
+      // Fallback: Just show alert if lock fails (often fails on iOS Safari)
+      if (isMobile) {
+        alert('화면 회전이 지원되지 않거나 권한이 없습니다. 기기를 직접 가로로 회전해주세요.');
+      }
+    }
+  };
+
+  // Listen for fullscreen changes to update state
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   // 전도인카드 필터 다이얼로그 열기
   const handleOpenPublisherCardFilter = () => {
     // 기본적으로 모든 전도인 선택
@@ -420,42 +470,80 @@ export default function MonthlyReportDetail({
       }}
     >
       <DialogTitle sx={{
-        bgcolor: '#e3f2fd',
-        color: 'black',
+        bgcolor: 'background.paper',
+        color: 'text.primary',
         fontWeight: 'bold',
-        fontSize: '1.5rem',
-        textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+        fontSize: '1.25rem',
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+        py: 2,
+        px: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 2
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <IconButton
-              onClick={handleMenuClick}
-              size="small"
-              sx={{
-                color: 'primary.main',
-                bgcolor: 'white',
-                '&:hover': { bgcolor: 'grey.100' }
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
+          <IconButton
+            onClick={handleMenuClick}
+            size="small"
+            sx={{
+              color: 'primary.main',
+              bgcolor: 'action.hover',
+              '&:hover': { bgcolor: 'action.selected' }
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" component="div" sx={{ 
+            fontWeight: 'bold', 
+            overflow: 'hidden', 
+            textOverflow: 'ellipsis', 
+            whiteSpace: 'nowrap' 
+          }}>
+            {month} 상세 보고
+          </Typography>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Mobile Landscape Button */}
+            {isMobile && (
+              <Tooltip title={isFullscreen ? "전체화면 종료" : "가로 모드 (전체화면)"}>
+                <IconButton 
+                  onClick={handleLandscapeMode} 
+                  size="small"
+                  color="primary"
+                  sx={{ 
+                    bgcolor: 'action.hover',
+                    '&:hover': { bgcolor: 'action.selected' }
+                  }}
+                >
+                  {isFullscreen ? <FullscreenExitIcon /> : <ScreenRotationIcon />}
+                </IconButton>
+              </Tooltip>
+            )}
+            
+            <IconButton 
+              onClick={onClose} 
+              size="small" 
+              sx={{ 
+                color: 'text.secondary',
+                '&:hover': { bgcolor: 'action.hover' }
               }}
             >
-              <MenuIcon />
+              <CloseIcon />
             </IconButton>
-            {month} 상세 보고
-          </div>
-          <IconButton onClick={onClose} size="small" sx={{ color: 'grey.500' }}>
-            <CloseIcon />
-          </IconButton>
         </div>
+      </DialogTitle>
 
         {/* PDF 로딩 상태 */}
         {pdfLoading && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+          <Box sx={{ px: 3, py: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
               PDF 생성 중... {Math.round(pdfProgress)}%
             </Typography>
-            <LinearProgress variant="determinate" value={pdfProgress} />
+            <LinearProgress variant="determinate" value={pdfProgress} sx={{ height: 4, borderRadius: 2 }} />
           </Box>
         )}
-      </DialogTitle>
 
       {/* 메뉴 */}
       <Menu
@@ -483,9 +571,12 @@ export default function MonthlyReportDetail({
         </MenuItem>
       </Menu>
       <DialogContent sx={{
-        bgcolor: 'background.paper',
+        bgcolor: '#f8f9fa', // Lighter background
         color: 'text.primary',
-        p: 3
+        p: { xs: 1, sm: 2, md: 3 }, // Responsive padding
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2
       }}>
         {loading ? (
           <Box sx={{
@@ -497,7 +588,7 @@ export default function MonthlyReportDetail({
           }}>
             <div className="loading-spinner" />
             <Typography sx={{
-              color: 'text.primary',
+              color: 'text.secondary',
               mt: 2,
               animation: 'pulse 1.5s infinite'
             }}>
@@ -505,127 +596,50 @@ export default function MonthlyReportDetail({
             </Typography>
           </Box>
         ) : error ? (
-          <Typography color="error">{error}</Typography>
-        ) : details.length === 0 ? (
-          <>
-            <Typography sx={{ mb: 2, color: 'text.primary' }}>데이터가 없습니다.</Typography>
-            <TableContainer component={Paper} sx={{ bgcolor: 'background.paper' }}>
-              <Table size="small" sx={{ '& .MuiTableCell-root': { borderColor: 'rgba(224, 224, 224, 0.3)' }, '& .MuiTableRow-root': { transition: 'background-color 0.2s ease' } }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary', fontWeight: 'bold', bgcolor: 'action.selected' }}>이름</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary', fontWeight: 'bold', bgcolor: 'action.selected' }}>참여</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary', fontWeight: 'bold', bgcolor: 'action.selected' }}>연구</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary', fontWeight: 'bold', bgcolor: 'action.selected' }}>시간</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary', fontWeight: 'bold', bgcolor: 'action.selected' }}>비고</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary', fontWeight: 'bold', bgcolor: 'action.selected' }}>구분</TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary', fontWeight: 'bold', bgcolor: 'action.selected' }}>직책</TableCell>
-                    <TableCell align="center" sx={{ color: 'text.primary', fontWeight: 'bold', bgcolor: 'action.selected' }}>집단</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {/* 데이터가 없을 때는 빈 테이블 본문 표시 */}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
+          <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
         ) : (
           <>
-            <Box sx={{
+            {/* 필터 영역 */}
+            <Paper elevation={0} sx={{
               display: 'flex',
               gap: 2,
-              mb: 3,
               alignItems: 'center',
               flexWrap: 'wrap',
-              bgcolor: '#f5f5f5',
+              bgcolor: 'background.paper',
               p: 2,
               borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              border: '1px solid rgba(0,0,0,0.08)'
             }}>
               <FormControl size="small" sx={{
-                minWidth: 150,
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'white',
-                  '&:hover': {
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#1976d2'
-                    }
-                  }
-                }
+                minWidth: 120,
+                flex: { xs: 1, sm: '0 0 auto' }
               }}>
-                <InputLabel id="group-filter-label" sx={{
-                  color: '#1976d2',
-                  fontWeight: 'bold',
-                  mb: 1
-                }}>집단</InputLabel>
+                <InputLabel id="group-filter-label">집단</InputLabel>
                 <Select
                   labelId="group-filter-label"
                   value={groupFilter}
                   label="집단"
                   onChange={handleGroupFilterChange}
-                  sx={{
-                    color: 'text.primary',
-                    '&:hover': {
-                      bgcolor: 'rgba(25, 118, 210, 0.04)'
-                    }
-                  }}
                 >
                   {availableGroups.map((group) => (
-                    <MenuItem key={group} value={group} sx={{
-                      color: 'text.primary',
-                      '&:hover': {
-                        bgcolor: 'rgba(25, 118, 210, 0.08)'
-                      },
-                      '&.Mui-selected': {
-                        bgcolor: 'rgba(25, 118, 210, 0.12)'
-                      }
-                    }}>
-                      {group}
-                    </MenuItem>
+                    <MenuItem key={group} value={group}>{group}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
 
               <FormControl size="small" sx={{
-                minWidth: 150,
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'white',
-                  '&:hover': {
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#1976d2'
-                    }
-                  }
-                }
+                minWidth: 120,
+                flex: { xs: 1, sm: '0 0 auto' }
               }}>
-                <InputLabel id="division-filter-label" sx={{
-                  color: '#1976d2',
-                  fontWeight: 'bold',
-                  mb: 1
-                }}>구분</InputLabel>
+                <InputLabel id="division-filter-label">구분</InputLabel>
                 <Select
                   labelId="division-filter-label"
                   value={divisionFilter}
                   label="구분"
                   onChange={handleDivisionFilterChange}
-                  sx={{
-                    color: 'text.primary',
-                    '&:hover': {
-                      bgcolor: 'rgba(25, 118, 210, 0.04)'
-                    }
-                  }}
                 >
                   {availableDivisions.map((division) => (
-                    <MenuItem key={division} value={division} sx={{
-                      color: 'text.primary',
-                      '&:hover': {
-                        bgcolor: 'rgba(25, 118, 210, 0.08)'
-                      },
-                      '&.Mui-selected': {
-                        bgcolor: 'rgba(25, 118, 210, 0.12)'
-                      }
-                    }}>
-                      {division}
-                    </MenuItem>
+                    <MenuItem key={division} value={division}>{division}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -638,75 +652,69 @@ export default function MonthlyReportDetail({
                     setDivisionFilter('전체');
                   }}
                   title="필터 초기화"
-                  sx={{ ml: 1, color: 'text.primary' }}
+                  sx={{ ml: 'auto' }}
                 >
                   <CloseIcon fontSize="small" />
                 </IconButton>
               )}
+              
+              <Box sx={{ ml: { xs: 0, sm: 'auto' }, width: { xs: '100%', sm: 'auto' }, textAlign: 'right' }}>
+                <Typography variant="body2" color="text.secondary">
+                  총 {filteredDetails.length}명
+                  {(groupFilter !== '전체' || divisionFilter !== '전체') &&
+                    ` / ${details.length}`}
+                </Typography>
+              </Box>
+            </Paper>
 
-              <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
-                총 {filteredDetails.length}개 항목 표시 중
-                {(groupFilter !== '전체' || divisionFilter !== '전체') &&
-                  ` (전체 ${details.length}개 중)`}
-              </Typography>
-            </Box>
             <TableContainer
-              id="monthly-detail-table"
               component={Paper}
+              elevation={0}
               sx={{
-                bgcolor: 'background.paper',
                 borderRadius: 2,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(0,0,0,0.08)',
+                flex: 1,
                 overflow: 'auto',
-                '@media (max-width: 600px)': {
-                  '& table': {
-                    minWidth: 800
-                  }
-                }
+                maxHeight: 'calc(100vh - 250px)', // Max height for scrolling
               }}
             >
               <Table
+                stickyHeader
                 size="small"
                 sx={{
-                  '& .MuiTableCell-root': {
-                    borderColor: 'rgba(224, 224, 224, 0.3)',
-                    py: 1.5,
-                    px: 2
+                  '& .MuiTableCell-head': {
+                    bgcolor: '#f5f5f5',
+                    color: 'text.primary',
+                    fontWeight: 600,
+                    borderBottom: '2px solid rgba(0,0,0,0.08)'
                   },
-                  '& .MuiTableRow-root': {
-                    transition: 'background-color 0.2s ease'
+                  '& .MuiTableCell-body': {
+                     borderBottom: '1px solid rgba(0,0,0,0.04)'
+                  },
+                  '& .MuiTableRow-hover:hover': {
+                    bgcolor: 'action.hover'
                   }
                 }}
               >
                 <TableHead>
-                  <TableRow sx={{ bgcolor: '#e3f2fd' }}>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', borderRight: '1px solid rgba(255, 255, 255, 0.2)' }}>이름</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', borderRight: '1px solid rgba(255, 255, 255, 0.2)' }}>참여</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', borderRight: '1px solid rgba(255, 255, 255, 0.2)' }}>연구</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', borderRight: '1px solid rgba(255, 255, 255, 0.2)' }}>시간</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', borderRight: '1px solid rgba(255, 255, 255, 0.2)' }}>비고</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', borderRight: '1px solid rgba(255, 255, 255, 0.2)' }}>구분</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold', borderRight: '1px solid rgba(255, 255, 255, 0.2)' }}>직책</TableCell>
-                    <TableCell align="center" sx={{ color: 'black', fontWeight: 'bold' }}>집단</TableCell>
+                  <TableRow>
+                    <TableCell align="center" width="15%">이름</TableCell>
+                    <TableCell align="center" width="8%">참여</TableCell>
+                    <TableCell align="center" width="8%">연구</TableCell>
+                    <TableCell align="center" width="8%">시간</TableCell>
+                    <TableCell align="left" width="35%">비고</TableCell>
+                    <TableCell align="center" width="10%">구분</TableCell>
+                    <TableCell align="center" width="8%">직책</TableCell>
+                    <TableCell align="center" width="8%">집단</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredDetails.map((row, index) => (
                     <TableRow
                       key={index}
-                      sx={{
-                        '&:nth-of-type(odd)': {
-                          bgcolor: 'rgba(25, 118, 210, 0.04)'
-                        },
-                        '&:hover': {
-                          bgcolor: 'rgba(25, 118, 210, 0.08)',
-                          '& .MuiTableCell-root': {
-                            color: '#1976d2'
-                          }
-                        }
-                      }}
+                      hover
                     >
-                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>
+                      <TableCell align="center">
                         <Link
                           component="button"
                           onClick={() => {
@@ -714,8 +722,9 @@ export default function MonthlyReportDetail({
                             setYearlyReportOpen(true);
                           }}
                           sx={{
-                            cursor: 'pointer',
+                            fontWeight: 500,
                             textDecoration: 'none',
+                            color: 'primary.main',
                             '&:hover': {
                               textDecoration: 'underline'
                             }
@@ -724,15 +733,30 @@ export default function MonthlyReportDetail({
                           {row.name}
                         </Link>
                       </TableCell>
-                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.participated ? 'Y' : 'N'}</TableCell>
-                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.bibleStudies && row.bibleStudies !== 0 ? row.bibleStudies : ''}</TableCell>
-                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{row.hours && row.hours !== 0 ? row.hours : ''}</TableCell>
-                      <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>{Array.isArray(row.remarks) ? row.remarks.join('\n') : (row.remarks !== null && row.remarks !== undefined) ? row.remarks : ''}</TableCell>
-                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 0.5)', color: 'text.primary' }}>
-                        {row.division || ''}
+                      <TableCell align="center">
+                        {row.participated ? 
+                          <Chip label="Y" size="small" color="success" variant="outlined" sx={{ height: 20, minWidth: 20, '& .MuiChip-label': { px: 1 } }} /> 
+                          : <Chip label="N" size="small" color="default" variant="outlined" sx={{ height: 20, minWidth: 20, opacity: 0.5, '& .MuiChip-label': { px: 1 } }} />
+                        }
                       </TableCell>
-                      <TableCell align="center" sx={{ borderRight: '1px solid rgba(0, 0, 0, 0.2)', color: 'text.primary' }}>{row.position || ''}</TableCell>
-                      <TableCell align="center" sx={{ color: 'text.primary' }}>{row.group || ''}</TableCell>
+                      <TableCell align="center" sx={{ color: row.bibleStudies ? 'text.primary' : 'text.disabled' }}>
+                        {row.bibleStudies || '-'}
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: row.hours ? 'bold' : 'normal', color: row.hours ? 'primary.dark' : 'text.disabled' }}>
+                        {row.hours || '-'}
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem' }}>
+                        {Array.isArray(row.remarks) ? row.remarks.join('\n') : row.remarks}
+                      </TableCell>
+                      <TableCell align="center">
+                         {row.division && <Chip label={row.division} size="small" sx={{ height: 24, bgcolor: 'action.hover' }} />}
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+                        {row.position || '-'}
+                      </TableCell>
+                      <TableCell align="center" sx={{ color: 'text.secondary' }}>
+                        {row.group}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
