@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 export interface MonthlyRecord {
   month: string;
@@ -177,7 +177,7 @@ export const generateMonthlyReportPDF = async (
   });
 
   try {
-    (pdf as any).autoTable({
+    autoTable(pdf, {
       head: [tableHeaders],
       body: tableRows,
       startY: position,
@@ -228,7 +228,6 @@ export const generateMonthlyReportPDF = async (
     throw new Error('테이블 생성 중 오류가 발생했습니다: ' + (error instanceof Error ? error.message : String(error)));
   }
 };
-
 
 
 
