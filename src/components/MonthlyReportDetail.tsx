@@ -154,7 +154,7 @@ export default function MonthlyReportDetail({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `전도인카드_${name}_${month}.pdf`;
+      link.download = `전도인카드_${name}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -358,7 +358,7 @@ export default function MonthlyReportDetail({
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `전도인카드_${member.name}_${month}.pdf`;
+          link.download = `전도인카드_${member.name}.pdf`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
