@@ -85,6 +85,7 @@ export default function MonthlyReportDetail({
   const [publisherCardFilterOpen, setPublisherCardFilterOpen] = useState(false);
   const [selectedPublishers, setSelectedPublishers] = useState<string[]>([]);
   const [divisionCardFilter, setDivisionCardFilter] = useState<string[]>([]);
+  const [publisherCardOutputMode, setPublisherCardOutputMode] = useState<'merged' | 'individual'>('merged');
 
   const filteredDetails = React.useMemo(() => {
     let filtered = [...details];
@@ -312,6 +313,7 @@ export default function MonthlyReportDetail({
     setSelectedPublishers(filteredDetails.map(member => member.name));
     // 기본 필터 설정 (모든 구분 포함)
     setDivisionCardFilter(['정규', '보조', '전도인']);
+    setPublisherCardOutputMode('merged');
     setPublisherCardFilterOpen(true);
     handleMenuClose();
   };
@@ -351,30 +353,48 @@ export default function MonthlyReportDetail({
 
         // 전도인카드 생성 (S-21 오버레이)
         const pdfBytes = await generateS21Card(yearlyData, serviceYear);
-        pdfBytesArray.push(pdfBytes);
+        if (publisherCardOutputMode === 'individual') {
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `전도인카드_${member.name}_${month}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        } else {
+          pdfBytesArray.push(pdfBytes);
+        }
       }
 
-      setPdfProgress(90);
-      
-      // PDF 병합
-      const mergedPdfBytes = await mergePDFs(pdfBytesArray);
+      if (publisherCardOutputMode === 'merged') {
+        setPdfProgress(90);
+        
+        const mergedPdfBytes = await mergePDFs(pdfBytesArray);
 
-      // 다운로드
-      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${month}_전도인카드_선택됨.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+        const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${month}_전도인카드_선택됨.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
-      setPdfProgress(100);
+        setPdfProgress(100);
 
-      setTimeout(() => {
-        alert(`${totalMembers}명의 전도인카드가 성공적으로 생성되었습니다.`);
-      }, 500);
+        setTimeout(() => {
+          alert(`${totalMembers}명의 전도인카드가 성공적으로 생성되었습니다.`);
+        }, 500);
+      } else {
+        setPdfProgress(100);
+
+        setTimeout(() => {
+          alert(`${totalMembers}명의 전도인카드가 개별 PDF 파일로 생성되었습니다.`);
+        }, 500);
+      }
 
     } catch (error) {
       console.error('전도인카드 PDF 생성 오류:', error);
@@ -764,6 +784,28 @@ export default function MonthlyReportDetail({
                 sx={{ m: 0.5 }}
               />
             ))}
+          </Box>
+
+          <Typography variant="subtitle1" sx={{ mb: 2, mt: 2, fontWeight: 'bold' }}>
+            출력 방식
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+            <Button
+              variant={publisherCardOutputMode === 'merged' ? 'contained' : 'outlined'}
+              color="primary"
+              size="small"
+              onClick={() => setPublisherCardOutputMode('merged')}
+            >
+              한 개의 PDF로 합치기
+            </Button>
+            <Button
+              variant={publisherCardOutputMode === 'individual' ? 'contained' : 'outlined'}
+              color="primary"
+              size="small"
+              onClick={() => setPublisherCardOutputMode('individual')}
+            >
+              전도인별 개별 PDF 생성
+            </Button>
           </Box>
 
           <Typography variant="subtitle1" sx={{ mb: 2, mt: 2, fontWeight: 'bold' }}>
